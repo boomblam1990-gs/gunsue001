@@ -565,7 +565,8 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
         </div>)}
       </header>
 
-      <div className="grid">
+      <div className="app">
+       <aside className="sidebar">
         <section className="panel">
           <div className="panel-head"><span className="panel-ic">🎯</span><span className="panel-title">ตั้งโจทย์</span></div>
           <label className="field"><span className="lbl">หัวข้อ / ประเด็น</span>
@@ -631,73 +632,83 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
           {error && <div className="err">{error}</div>}
           <div className="run-note">เหตุผล/แหล่งอ้างอิงเครื่องมือมาจากคลังระเบียบวิธี · ตัวเลขเป็นค่าประมาณเว้นแต่ยืนยันจากไฟล์แนบ/ค้นเว็บ</div>
         </section>
-      </div>
 
-      {(loading || result) && (
-        <section className="output">
-          {ranConfig && (<div className="out-config-row">
-            <span className="oc">{ranConfig.topic}</span><i>·</i><span>{ranConfig.sectors}</span><i>·</i><span>{ranConfig.purposes}</span><i>·</i><span>{ranConfig.org}</span><i>·</i><span>{ranConfig.user}</span>
-            {ranConfig.hasFiles > 0 && <><i>·</i><span className="oc">📎 {ranConfig.hasFiles}</span></>}
-            {usedGrounding && <><i>·</i><span className="oc">🌐 ค้นเว็บ</span></>}
-            <i>·</i><span className="oc">{ranConfig.provider}</span>
-          </div>)}
+        {result && (
+        <section className="panel">
+          <div className="panel-head"><span className="panel-ic">📑</span><span className="panel-title">มุมมองผลลัพธ์</span></div>
+          <div className="viewlist">{TABS.map((t) => (
+            <button key={t.k} className={"viewbtn" + (view === t.k ? " on" : "")} onClick={() => goTab(t.k)}><span>{t.ic}</span>{t.label}{t.k === "report" ? " (หลัก)" : ""}</button>
+          ))}</div>
+          <div className="side-sec">
+            <div className="side-lbl">🔗 ต่อยอดผลนี้ให้เป็นผลงานพร้อมใช้</div>
+            <div className="chips">{FOLLOW.map((f) => (<button key={f.key} className="follow-btn" disabled={loading} onClick={() => runFollow(f)} title={f.deliver}>{f.label}</button>))}</div>
+          </div>
+          <div className="side-sec">
+            <div className="side-lbl">✎ ปรับแต่ง / เพิ่มข้อมูล แล้วประมวลผลใหม่</div>
+            <textarea className="ta" rows={3} value={refine} onChange={(e) => setRefine(e.target.value)} placeholder="พิมพ์ข้อมูลเพิ่มเติมหรือทิศทางที่ต้องการ เช่น 'เพิ่มมิติกำลังคน อสม.'" />
+            <button className="refine-btn" disabled={loading || !refine.trim()} onClick={runRefine}>↻ ประมวลผลใหม่พร้อมข้อมูลนี้</button>
+          </div>
+        </section>
+        )}
+       </aside>
 
-          {result && (<div className="tabbar">{TABS.map((t) => (
-            <button key={t.k} className={"tab" + (view === t.k ? " tab-on" : "")} onClick={() => goTab(t.k)}><span className="tab-ic">{t.ic}</span>{t.label}</button>
-          ))}</div>)}
+       <main className="report-area">
+          {!loading && !result && (<div className="empty"><span className="em-ic">🧭</span>ยังไม่มีผลวิเคราะห์<br />ตั้งโจทย์ทางซ้าย แล้วกดปุ่ม “ให้กุนซือวิเคราะห์”</div>)}
 
           {loading && !result && (<div className="skeleton">
             <div className="sk-line w60" /><div className="sk-line w90" /><div className="sk-line w80" /><div className="sk-line w70" />
             <div className="sk-pulse">กุนซือกำลังรันเครื่องมือ {active.length} ตัว{files.length ? ` · อ่านไฟล์ ${files.length}` : ""}{grounding && canGround ? " · ค้นเว็บ" : ""}…</div></div>)}
 
-          {result && view === "report" && (<>
-            <div className="report-bar">
-              <button className="mini-btn" onClick={copyReport}>{copied ? "✓ คัดลอกแล้ว" : "⧉ คัดลอก"}</button>
-              <button className="mini-btn primary" onClick={exportDoc}>⬇ ดาวน์โหลด (Word)</button>
+          {result && (<>
+            <div className="report-head">
+              {ranConfig && (<div className="out-config-row">
+                <span className="oc">{ranConfig.topic}</span><i>·</i><span>{ranConfig.sectors}</span><i>·</i><span>{ranConfig.purposes}</span><i>·</i><span>{ranConfig.org}</span><i>·</i><span>{ranConfig.user}</span>
+                {ranConfig.hasFiles > 0 && <><i>·</i><span className="oc">📎 {ranConfig.hasFiles}</span></>}
+                {usedGrounding && <><i>·</i><span className="oc">🌐 ค้นเว็บ</span></>}
+                <i>·</i><span className="oc">{ranConfig.provider}</span>
+              </div>)}
+              <div className="report-bar">
+                <button className="mini-btn" onClick={copyReport}>{copied ? "✓ คัดลอกแล้ว" : "⧉ คัดลอก"}</button>
+                <button className="mini-btn primary" onClick={exportDoc}>⬇ ดาวน์โหลด (Word)</button>
+              </div>
             </div>
-            <Markdown text={result} />
-            {sources.length > 0 && (<div className="src"><div className="src-lbl">🌐 แหล่งข้อมูลค้นเว็บสด</div>
-              <ol>{sources.map((s, i) => <li key={i}><a href={s.url} target="_blank" rel="noreferrer">{s.title}</a></li>)}</ol></div>)}
-            <div className="follow">
-              <div className="follow-lbl">ต่อยอดผลนี้ให้เป็นผลงานพร้อมใช้ →</div>
-              <div className="chips">{FOLLOW.map((f) => (<button key={f.key} className="follow-btn" disabled={loading} onClick={() => runFollow(f)} title={f.deliver}>{f.label}</button>))}</div>
-            </div>
-            <div className="refine">
-              <div className="refine-lbl">เพิ่มข้อมูล / ปรับแก้ แล้วประมวลผลใหม่</div>
-              <textarea className="ta" rows={3} value={refine} onChange={(e) => setRefine(e.target.value)} placeholder="พิมพ์ข้อมูลเพิ่มเติมหรือทิศทางที่ต้องการ เช่น 'เพิ่มมิติกำลังคน อสม.'" />
-              <button className="refine-btn" disabled={loading || !refine.trim()} onClick={runRefine}>↻ ประมวลผลใหม่พร้อมข้อมูลนี้</button>
-            </div>
+
+            {view === "report" && (<>
+              <Markdown text={result} />
+              {sources.length > 0 && (<div className="src"><div className="src-lbl">🌐 แหล่งข้อมูลค้นเว็บสด</div>
+                <ol>{sources.map((s, i) => <li key={i}><a href={s.url} target="_blank" rel="noreferrer">{s.title}</a></li>)}</ol></div>)}
+            </>)}
+
+            {view === "onepager" && (<div className="pane">
+              {opLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังสรุปเป็นบทสรุป 1 หน้า…</div>}
+              {opErr && <div className="err">{opErr} <button className="mini-btn" onClick={makeOnepager}>ลองใหม่</button></div>}
+              {onepager && !opLoading && <Markdown text={onepager} />}</div>)}
+
+            {view === "prep" && (<div className="pane">
+              {prepLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังจัดทำแนวทางเตรียมความพร้อม…</div>}
+              {prepErr && <div className="err">{prepErr} <button className="mini-btn" onClick={makePrep}>ลองใหม่</button></div>}
+              {prep && !prepLoading && <Markdown text={prep} />}</div>)}
+
+            {view === "extra" && (<div className="pane">
+              <div className="extra-buttons">{Object.entries(EXTRAS).map(([k, v]) => (
+                <button key={k} className={"ex-btn" + (extraKey === k ? " on" : "")} disabled={extraLoading} onClick={() => runExtra(k)}>{v.label}</button>))}</div>
+              {extraLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังสร้าง {EXTRAS[extraKey]?.label}…</div>}
+              {extraErr && <div className="err">{extraErr} <button className="mini-btn" onClick={() => runExtra(extraKey)}>ลองใหม่</button></div>}
+              {extra && !extraLoading && <Markdown text={extra} />}
+              {!extra && !extraLoading && !extraErr && <p className="extra-hint">เลือกรูปแบบผลลัพธ์ที่ต้องการด้านบน กุนซือจะแปลงจากผลวิเคราะห์ให้</p>}
+            </div>)}
+
+            {view === "tools" && (<div className="pane">
+              <p className="tools-intro">เครื่องมือ {usedFw.length} ตัวที่กุนซือเลือกใช้กับโจทย์นี้ พร้อมเหตุผลและแหล่งอ้างอิงระเบียบวิธีต้นฉบับ</p>
+              {usedFw.map((f) => (<div key={f} className="tool-row"><div className="tool-name">{f}</div><div className="tool-why">{fwMeta(f).why}</div><div className="tool-ref">อ้างอิง: {fwMeta(f).ref}</div></div>))}</div>)}
+
+            {view === "mindmap" && (<div className="pane">
+              {mmLoading && <div className="sk-pulse" style={{ padding: "20px 0" }}>กำลังสรุปเป็นมายด์แมพ…</div>}
+              {mmError && <div className="err">{mmError} <button className="mini-btn" onClick={makeMindmap}>ลองใหม่</button></div>}
+              {mindmap && !mmLoading && (<><MindMap data={mindmap} /><button className="mini-btn" onClick={makeMindmap} style={{ marginTop: 14 }}>↻ สร้างมายด์แมพใหม่</button></>)}</div>)}
           </>)}
-
-          {result && view === "onepager" && (<div className="pane">
-            {opLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังสรุปเป็นบทสรุป 1 หน้า…</div>}
-            {opErr && <div className="err">{opErr} <button className="mini-btn" onClick={makeOnepager}>ลองใหม่</button></div>}
-            {onepager && !opLoading && <Markdown text={onepager} />}</div>)}
-
-          {result && view === "prep" && (<div className="pane">
-            {prepLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังจัดทำแนวทางเตรียมความพร้อม…</div>}
-            {prepErr && <div className="err">{prepErr} <button className="mini-btn" onClick={makePrep}>ลองใหม่</button></div>}
-            {prep && !prepLoading && <Markdown text={prep} />}</div>)}
-
-          {result && view === "extra" && (<div className="pane">
-            <div className="extra-buttons">{Object.entries(EXTRAS).map(([k, v]) => (
-              <button key={k} className={"ex-btn" + (extraKey === k ? " on" : "")} disabled={extraLoading} onClick={() => runExtra(k)}>{v.label}</button>))}</div>
-            {extraLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังสร้าง {EXTRAS[extraKey]?.label}…</div>}
-            {extraErr && <div className="err">{extraErr} <button className="mini-btn" onClick={() => runExtra(extraKey)}>ลองใหม่</button></div>}
-            {extra && !extraLoading && <Markdown text={extra} />}
-            {!extra && !extraLoading && !extraErr && <p className="extra-hint">เลือกรูปแบบผลลัพธ์ที่ต้องการด้านบน กุนซือจะแปลงจากผลวิเคราะห์ให้</p>}
-          </div>)}
-
-          {result && view === "tools" && (<div className="pane">
-            <p className="tools-intro">เครื่องมือ {usedFw.length} ตัวที่กุนซือเลือกใช้กับโจทย์นี้ พร้อมเหตุผลและแหล่งอ้างอิงระเบียบวิธีต้นฉบับ</p>
-            {usedFw.map((f) => (<div key={f} className="tool-row"><div className="tool-name">{f}</div><div className="tool-why">{fwMeta(f).why}</div><div className="tool-ref">อ้างอิง: {fwMeta(f).ref}</div></div>))}</div>)}
-
-          {result && view === "mindmap" && (<div className="pane">
-            {mmLoading && <div className="sk-pulse" style={{ padding: "20px 0" }}>กำลังสรุปเป็นมายด์แมพ…</div>}
-            {mmError && <div className="err">{mmError} <button className="mini-btn" onClick={makeMindmap}>ลองใหม่</button></div>}
-            {mindmap && !mmLoading && (<><MindMap data={mindmap} /><button className="mini-btn" onClick={makeMindmap} style={{ marginTop: 14 }}>↻ สร้างมายด์แมพใหม่</button></>)}</div>)}
-        </section>
-      )}
+       </main>
+      </div>
 
       <footer className="foot">
         <div>{NAME} · {NAME_EN} v{VERSION}</div>
@@ -770,6 +781,23 @@ const CSS = `
 .how-step b{color:var(--brand1);font-weight:700;}
 .grid{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr 1.35fr;gap:18px;align-items:start;}
 @media(max-width:820px){.grid{grid-template-columns:1fr;}}
+.app{max-width:1260px;margin:0 auto;display:grid;grid-template-columns:400px 1fr;gap:18px;align-items:start;}
+@media(max-width:980px){.app{grid-template-columns:1fr;}}
+.sidebar{display:flex;flex-direction:column;gap:16px;min-width:0;}
+.report-area{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:clamp(20px,3vw,32px);box-shadow:var(--shadow);min-height:340px;min-width:0;}
+.report-area::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad);}
+.report-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:18px;border-bottom:1px solid var(--line);}
+.report-head .out-config-row{border:none;padding:0;margin:0;flex:1;min-width:180px;}
+.report-head .report-bar{margin:0;}
+.empty{color:var(--muted);font-size:14.5px;text-align:center;padding:70px 20px;line-height:1.9;}
+.empty .em-ic{font-size:38px;display:block;margin-bottom:14px;opacity:.7;}
+.viewlist{display:flex;flex-direction:column;gap:6px;}
+.viewbtn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;font-family:inherit;font-size:13.5px;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;transition:all .14s;}
+.viewbtn:hover{border-color:var(--brand1);color:var(--brand1);transform:translateX(2px);}
+.viewbtn.on{background:var(--gradbtn);color:#fff;border-color:transparent;font-weight:700;box-shadow:0 5px 14px rgba(109,95,239,.35);}
+.viewbtn span{font-size:16px;line-height:1;}
+.side-sec{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);}
+.side-lbl{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:10px;}
 .panel{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow);}
 .panel::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad);}
 .panel-head{display:flex;align-items:center;gap:11px;margin-bottom:18px;}
