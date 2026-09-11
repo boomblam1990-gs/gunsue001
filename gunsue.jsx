@@ -615,7 +615,7 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
         </section>
 
         <section className="panel routing">
-          <div className="panel-head"><span className="panel-ic">🧭</span><span className="panel-title">เส้นทางเครื่องมือ</span></div>
+          <div className="panel-head panel-head-run"><span className="ph-left"><span className="panel-ic">🧭</span><span className="panel-title">เส้นทางเครื่องมือ</span></span><button type="button" className="run run-inline" onClick={runMain} disabled={loading}>{loading ? "กำลังวิเคราะห์…" : (dirty ? "▶ วิเคราะห์ใหม่" : "▶ วิเคราะห์")}</button></div>
           <div className="route-line"><span className="route-k">โจทย์</span><span className="route-v">{topic || "—"}</span></div>
           <div className="route-line"><span className="route-k">จุดประสงค์</span><span className="route-v hl">{purposes.length ? purposes.map((k) => PURPOSES[k].label).join(" + ") : "— เลือกอย่างน้อย 1"}</span></div>
           <div className="route-mini"><span>{ORG[org].label}</span><i>·</i><span>{USER[userLv].label}</span><i>·</i><span>{HORIZONS[horizon].label.split(" · ")[0]}</span></div>
@@ -628,7 +628,7 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
           {fwOpen && (<div className="fw-detail"><div className="fw-detail-name">{fwOpen}</div><div className="fw-detail-why">{fwMeta(fwOpen).why}</div><div className="fw-detail-ref">อ้างอิง: {fwMeta(fwOpen).ref}</div></div>)}
           {struck.length > 0 && <div className="strip-note">กรอบเวลาสั้น → ตัดเครื่องมือมองอนาคตออก</div>}
           <label className={"ground" + (canGround ? "" : " ground-off")}><input type="checkbox" checked={grounding && canGround} disabled={!canGround} onChange={(e) => setGrounding(e.target.checked)} /><span>🌐 ค้นเว็บสด (grounding) — หาตัวเลขล่าสุดพร้อมอ้างอิง <em>{canGround ? "ช้าลงเล็กน้อย" : "เฉพาะ Claude"}</em></span></label>
-          <button type="button" className="run" onClick={runMain} disabled={loading}>{loading ? <span className="run-load">กุนซือกำลังวิเคราะห์…</span> : (dirty ? "▶  วิเคราะห์อีกครั้ง (อินพุตเปลี่ยน)" : "▶  ให้กุนซือวิเคราะห์")}</button>
+          {dirty && <div className="strip-note">อินพุตเปลี่ยน — กด “▶ วิเคราะห์ใหม่” ด้านบนเพื่ออัปเดต</div>}
           {error && <div className="err">{error}</div>}
           <div className="run-note">เหตุผล/แหล่งอ้างอิงเครื่องมือมาจากคลังระเบียบวิธี · ตัวเลขเป็นค่าประมาณเว้นแต่ยืนยันจากไฟล์แนบ/ค้นเว็บ</div>
         </section>
@@ -870,6 +870,10 @@ button.fw{cursor:pointer;}
 .run:disabled{opacity:.75;cursor:wait;}
 .run-load{font-family:'IBM Plex Mono',monospace;font-size:13px;}
 .run-note{font-size:11px;color:var(--dim);margin-top:10px;line-height:1.5;}
+.panel-head-run{justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.ph-left{display:flex;align-items:center;gap:11px;}
+.run-inline{width:auto;margin:0;padding:11px 20px;font-size:14.5px;flex-shrink:0;animation:glow 2.6s ease-in-out infinite;}
+@keyframes glow{0%,100%{box-shadow:0 6px 18px rgba(109,95,239,.38);}50%{box-shadow:0 9px 28px rgba(34,183,230,.6);}}
 .err{color:var(--danger);font-size:12.5px;margin-top:10px;}
 .output{max-width:1120px;margin:18px auto 0;position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:clamp(20px,4vw,34px);box-shadow:var(--shadow);}
 .output::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad);}
