@@ -5,19 +5,19 @@ import React, { useState, useMemo, useRef } from "react";
    ============================================================ */
 const NAME = "กุนซือ";
 const NAME_EN = "Gunsue · Strategic Advisor";
-const VERSION = "5.2.0";
+const VERSION = "5.3.0";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const MODEL_PREVIEW = "claude-sonnet-4-6";
-const MAX_TOKENS = 4096;
+const MAX_TOKENS = 6000;
 const DEFAULT_PROVIDER = "puter";   // ★ ใช้ฟรีสำหรับทุกคน ไม่ตัดโทเคนผู้พัฒนา (สลับเป็น "anthropic" ได้ถ้าต้องการ)
 const DEFAULT_THEME = "light";
 const DEV = { name: "อรรถพล ภักดี", role: "นักวิชาการสาธารณสุขปฏิบัติการ", unit: "กลุ่มงานพัฒนายุทธศาสตร์สาธารณสุข", org: "สำนักงานสาธารณสุขจังหวัดพิษณุโลก" };
 
 const PROVIDERS = {
-  puter:      { label: "ใช้ฟรี · ไม่ต้องมีคีย์ (Puter)", def: "gpt-4o-mini", sugg: ["gpt-4o-mini", "gpt-4.1-nano", "claude-sonnet-4", "gemini-2.0-flash"], keyless: true },
-  anthropic:  { label: "Claude", def: "claude-sonnet-5", sugg: ["claude-sonnet-5", "claude-opus-4-8", "claude-haiku-4-5"], keyHint: "sk-ant-..." },
-  google:     { label: "Gemini (Google) · มีชั้นฟรี", def: "gemini-2.0-flash", sugg: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"], keyHint: "AIza...", free: true },
-  openai:     { label: "ChatGPT (OpenAI)", def: "gpt-4o", sugg: ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "o4-mini"], keyHint: "sk-..." },
+  puter:      { label: "ใช้ฟรี · ไม่ต้องมีคีย์ (Puter)", def: "gpt-4.1", sugg: ["gpt-4.1", "claude-sonnet-4", "gemini-2.0-flash", "gpt-4o-mini"], keyless: true, top: "claude-sonnet-4" },
+  anthropic:  { label: "Claude", def: "claude-sonnet-5", sugg: ["claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5"], keyHint: "sk-ant-...", top: "claude-opus-4-8", keyUrl: "console.anthropic.com" },
+  google:     { label: "Gemini (Google) · มีชั้นฟรี", def: "gemini-1.5-pro", sugg: ["gemini-1.5-pro", "gemini-2.0-flash", "gemini-1.5-flash"], keyHint: "AIza...", free: true, top: "gemini-1.5-pro", keyUrl: "aistudio.google.com" },
+  openai:     { label: "ChatGPT (OpenAI)", def: "gpt-4.1", sugg: ["gpt-4.1", "gpt-4o", "o4-mini", "gpt-4o-mini"], keyHint: "sk-...", top: "gpt-4.1", keyUrl: "platform.openai.com/api-keys" },
   compatible: { label: "อื่น ๆ (OpenAI-compatible)", def: "", sugg: ["deepseek-chat", "grok-2", "qwen-max"], keyHint: "คีย์ของผู้ให้บริการ" },
 };
 let puterPromise = null;
@@ -76,7 +76,7 @@ const FORESIGHT = ["Scenario", "Horizon Scanning", "Delphi", "Megatrend"];
 const FOLLOW = [
   { key: "strategy", label: "กำหนดกลยุทธ์", deliver: "แผนกลยุทธ์ที่พร้อมใช้: วิสัยทัศน์ ประเด็นยุทธศาสตร์ เป้าประสงค์ กลยุทธ์หลัก และตัวชี้วัดระดับกลยุทธ์" },
   { key: "policy", label: "กำหนดนโยบาย", deliver: "ข้อเสนอเชิงนโยบาย: หลักการและเหตุผล ทางเลือกนโยบาย 2–3 แบบพร้อมข้อดี/ข้อเสีย ข้อเสนอที่แนะนำ และกลไกขับเคลื่อน" },
-  { key: "plan", label: "จัดทำโครงการ", deliver: "โครงการที่พร้อมเสนอในรูป Logframe: หลักการเหตุผล วัตถุประสงค์ กลุ่มเป้าหมาย กิจกรรมหลัก ตัวชี้วัดผลผลิต/ผลลัพธ์ งบประมาณโดยสังเขป ผู้รับผิดชอบ และไทม์ไลน์" },
+  { key: "plan", label: "จัดทำโครงการ (ครบองค์ประกอบ)", deliver: "โครงการฉบับสมบูรณ์พร้อมเสนอตามรูปแบบราชการไทย มีครบทุกองค์ประกอบและเขียนแต่ละข้อให้ละเอียด: 1) ชื่อโครงการ 2) หลักการและเหตุผล 3) วัตถุประสงค์ 4) เป้าหมายและตัวชี้วัดความสำเร็จ 5) กลุ่มเป้าหมาย 6) วิธีดำเนินการและกิจกรรม (ตาราง: กิจกรรม | ระยะเวลา | ผู้รับผิดชอบ) 7) ระยะเวลาดำเนินการ 8) งบประมาณ (ตารางแจกแจงรายการ-จำนวนเงิน) 9) ผู้รับผิดชอบโครงการ 10) ผลที่คาดว่าจะได้รับ 11) การติดตามและประเมินผล" },
   { key: "allocate", label: "จัดลำดับ/จัดสรรงบ", deliver: "ผลการจัดลำดับความสำคัญ: เกณฑ์การให้คะแนน ตารางคะแนนแต่ละรายการ ลำดับผลลัพธ์ และเหตุผลประกอบ" },
   { key: "crisis", label: "รับมือความเสี่ยง", deliver: "แผนบริหารความเสี่ยง: ทะเบียนความเสี่ยง (โอกาส×ผลกระทบ) มาตรการรับมือ จุดกระตุ้น (trigger) และผู้รับผิดชอบ" },
   { key: "evaluate", label: "วางตัวชี้วัด/ประเมินผล", deliver: "กรอบติดตามประเมินผล: Logic Model ตัวชี้วัดนำ/ตาม วิธีเก็บข้อมูล รอบการประเมิน และเกณฑ์ความสำเร็จ" },
@@ -132,8 +132,9 @@ const FW_META = {
   "6BB+1": { why: "ประเมินความเข้มแข็งของระบบสุขภาพครบ 6 เสาหลัก WHO + พลังการมีส่วนร่วมของประชาชน (Plus One) — เหมาะกับโจทย์สายสาธารณสุข", ref: "WHO Health System Building Blocks (2007) + Community Participation (Plus One)" },
 };
 const fwMeta = (name) => FW_META[name] || FW_META[name.split(" (")[0]] || { why: "—", ref: "—" };
+const BACKBONE = ["PESTEL", "Stakeholder", "SWOT", "TOWS", "Scenario", "Logframe", "OKR", "BSC", "Logic Model"];
 function routeFrameworks(purposeKeys, horizonKey, sectorList = []) {
-  let base = [];
+  let base = purposeKeys.length ? [...BACKBONE] : [];
   purposeKeys.forEach((pk) => (PURPOSES[pk]?.fw || []).forEach((f) => { if (!base.includes(f)) base.push(f); }));
   const h = HORIZONS[horizonKey]; let struck = [];
   if (h.stripForesight) { struck = base.filter((f) => FORESIGHT.includes(f)); base = base.filter((f) => !FORESIGHT.includes(f)); }
@@ -410,28 +411,54 @@ export default function Gunsue() {
     const secStr = allSectors().join(", ");
     setRanConfig({ topic, sectors: secStr, purposes: pl.map((k) => PURPOSES[k].label).join(" + "), org: ORG[org].label, user: USER[userLv].label, hasFiles: files.length, frameworks: fw, provider: PROVIDERS[provider].label });
     const useWeb = !!opts.web && canGround;
-    const basis = opts.basis ? `\n[ต่อยอดจากผลวิเคราะห์ก่อนหน้า — ใช้เป็นวัตถุดิบ อย่าวิเคราะห์ซ้ำ ให้พัฒนาต่อ]\n${opts.basis.slice(0, 1600)}\n` : "";
-    const deliverLine = opts.deliver ? `\n[ขั้นต่อยอด] ผลิตผลงานที่พร้อมนำไปใช้จริง: ${opts.deliver} — จัดเป็นหัวข้อ ## ชัดเจน มีตารางที่กรอกได้จริง\n` : "";
-    const extraLine = opts.extra ? `\n[ข้อมูล/คำสั่งเพิ่มเติมจากผู้ใช้]\n${opts.extra.slice(0, 1200)}\n` : "";
-    const fileNote = files.length ? "มีไฟล์แนบ — ดึงข้อมูล/ตัวเลขจากไฟล์มาใช้และระบุว่าอ้างอิงจากเอกสารแนบ\n" : "";
+    const basis = opts.basis ? `\n[ผลวิเคราะห์ก่อนหน้า — ใช้เป็นวัตถุดิบตั้งต้น]\n${opts.basis.slice(0, 1800)}\n` : "";
+    const extraLine = opts.extra ? `\n[ข้อมูล/คำสั่งเพิ่มเติมจากผู้ใช้ — นำไปปรับผลลัพธ์]\n${opts.extra.slice(0, 1200)}\n` : "";
+    const fileNote = files.length ? "มีไฟล์แนบ — ดึงข้อมูล/ตัวเลขจากไฟล์มาใช้และอ้างอิงว่ามาจากเอกสารแนบ\n" : "";
     const webNote = useWeb ? "ใช้การค้นเว็บหาตัวเลข/ข้อเท็จจริงล่าสุดพร้อมอ้างอิง\n" : "";
-    const bbNote = fw.includes("6BB+1") ? "[นิยาม 6BB+1] วิเคราะห์ระบบสุขภาพ 7 องค์ประกอบ: 1)การบริการสุขภาพ 2)กำลังคนด้านสุขภาพ 3)ระบบข้อมูลสุขภาพ 4)ยา เวชภัณฑ์ และเทคโนโลยี 5)การเงินการคลังสุขภาพ 6)ภาวะผู้นำและธรรมาภิบาล 7)การมีส่วนร่วมของประชาชน/พลังชุมชน (Plus One) — ทำเป็นตารางประเมินรายองค์ประกอบ (สถานะ/ช่องว่าง/ข้อเสนอ)\n" : "";
-    const prompt = `คุณคือเครื่องยนต์วิเคราะห์ยุทธศาสตร์ระดับมืออาชีพ ตอบเป็น Markdown ภาษาไทยเท่านั้น (ไม่มีคำนำ/คำท้ายนอกเนื้อหา)
-${basis}${deliverLine}${extraLine}${fileNote}${webNote}${bbNote}[อินพุต]
+    const common = `[อินพุต]
 หัวข้อ: ${topic}
 สายงาน: ${secStr}
-จุดประสงค์ (ทำตามลำดับ): ${pLabels}
+จุดประสงค์: ${pLabels}
 ระดับองค์กร: ${ORG[org].label} | ระดับผู้ใช้: ${USER[userLv].label} | กรอบเวลา: ${HORIZONS[horizon].label}
-บริบทเสริม: ${context.trim() || "ไม่ระบุ"}
+บริบทเสริม: ${context.trim() || "ไม่ระบุ"}`;
+    let prompt;
+    if (opts.deliver) {
+      prompt = `คุณคือเครื่องยนต์วิเคราะห์ยุทธศาสตร์ระดับมืออาชีพ ตอบเป็น Markdown ภาษาไทยเท่านั้น (ไม่มีคำนำ/คำท้ายนอกเนื้อหา)
+${basis}${extraLine}${fileNote}${webNote}${common}
+
+[ภารกิจ] นำผลวิเคราะห์ข้างต้นมาผลิต: ${opts.deliver}
+จัดเป็นหัวข้อ ## ให้ชัดเจน แต่ละองค์ประกอบเขียนละเอียดและมีตารางที่กรอกได้จริง เขียนให้ครบถ้วนทุกองค์ประกอบ พร้อมนำไปใช้/เสนอได้ทันที`;
+    } else {
+      const bb = fw.includes("6BB+1") ? `## 3. ประเมินระบบสุขภาพ (6BB+1)
+ตาราง 7 องค์ประกอบ: องค์ประกอบ | สถานะปัจจุบัน | ช่องว่าง | ข้อเสนอ (ครบ 6 เสาหลัก WHO + การมีส่วนร่วมของประชาชน/พลังชุมชน)
+` : "";
+      prompt = `คุณคือเครื่องยนต์วิเคราะห์ยุทธศาสตร์ระดับมืออาชีพ วิเคราะห์แบบ "ครบวงจร" อย่างละเอียดและลึก ตอบเป็น Markdown ภาษาไทยเท่านั้น (ไม่มีคำนำ/คำท้ายนอกเนื้อหา)
+${basis}${extraLine}${fileNote}${webNote}${common}
+เครื่องมือที่เรียกใช้: ${fw.join(", ")}
+
+[โครงสร้างผลลัพธ์ — ทำครบทุกหัวข้อ ตั้งแต่ภาพใหญ่ลงมาจนถึงการติดตามประเมินผล]
+## คำถามยุทธศาสตร์
+แปลงหัวข้อเป็นคำถามที่ตัดสินใจได้ 1 ประโยค
+## 1. มองภาพใหญ่ · วิเคราะห์สถานการณ์แวดล้อม
+PESTEL (ตาราง 6 ด้าน) + การวิเคราะห์ผู้มีส่วนได้เสีย + SWOT (ตาราง)
+## 2. วิเคราะห์เชิงลึกตามจุดประสงค์
+ใช้เครื่องมือที่เหมาะกับจุดประสงค์ (${pLabels}) พร้อมตารางที่มีสาระจริง
+${bb}## 4. ทางเลือกเชิงกลยุทธ์
+TOWS (ตาราง SO/ST/WO/WT) + Scenario (อนาคตหลายฉาก + กลยุทธ์ที่ทนทานทุกฉาก)
+## 5. แปลงสู่การปฏิบัติ (แผนงาน/โครงการ)
+Logframe/OKR/Roadmap — ตาราง: ริเริ่ม/กิจกรรม | ตัวชี้วัด | ผู้รับผิดชอบ | กรอบเวลา | งบโดยสังเขป
+## 6. ตัวชี้วัดและการติดตามประเมินผล
+Balanced Scorecard/Logic Model — ตารางตัวชี้วัดนำ (leading) และตาม (lagging) พร้อมเป้าหมายและรอบการวัด
+## ข้อเสนอเชิงกลยุทธ์
+สรุปสิ่งที่ควรทำและลำดับความสำคัญ
 
 [กติกา]
-1. เริ่มด้วย "## คำถามยุทธศาสตร์" แปลงหัวข้อลอยเป็นคำถามที่ตัดสินใจได้ 1 ประโยค
-2. ใช้เฉพาะเฟรมเวิร์กเหล่านี้ เรียงตามตรรกะ (มองสถานการณ์ → สร้างทางเลือก → แปลงเป็นการกระทำ): ${fw.join(", ")}
-   แต่ละเฟรมเวิร์ก = หนึ่งหัวข้อ "## " และวงเล็บสั้น ๆ ว่าทำไมเหมาะ พร้อมตาราง Markdown ที่มีเนื้อหาจริง (เขียนตารางให้ครบทุกแถวเสมอ)
-3. หน่วยการวิเคราะห์ให้ตรงระดับองค์กร: ${ORG[org].unit}
-4. ปรับความลึก/รูปแบบตามผู้ใช้: ${USER[userLv].style}
-5. ตัวเลข/ข้อเท็จจริงถือเป็นค่าประมาณ กำกับว่าควรตรวจสอบล่าสุด (เว้นแต่ยืนยันจากไฟล์แนบ/ค้นเว็บ)
-6. กระชับ ตรงประเด็น มีสาระ เขียนให้จบสมบูรณ์ทุกหัวข้อ`;
+- หน่วยการวิเคราะห์ให้ตรงระดับองค์กร: ${ORG[org].unit}
+- ปรับน้ำหนักความลึกตามผู้ใช้ (${USER[userLv].label}) แต่ยังต้องครบทุกหัวข้อข้างต้น
+- ทุกหัวข้อต้องมีตารางหรือรายการที่มีสาระจริง ห้ามเว้นว่างหรือสรุปสั้นเกินไป
+- ตัวเลข/ข้อเท็จจริงถือเป็นค่าประมาณ ควรตรวจสอบล่าสุด (เว้นแต่ยืนยันจากไฟล์แนบ/ค้นเว็บ)
+- เขียนให้ละเอียด ลึก และจบสมบูรณ์ทุกหัวข้อ`;
+    }
     try {
       const { text, sources: srcs } = await callAI(prompt, { web: useWeb, attachFiles: true });
       const out = text.replace(/```(?:markdown)?/g, "").trim();
@@ -581,6 +608,7 @@ ${basis}${deliverLine}${extraLine}${fileNote}${webNote}${bbNote}[อินพุ
                   : <>คีย์อยู่ในเบราว์เซอร์ของคุณเท่านั้น ส่งตรงไปผู้ให้บริการ · คิดค่าใช้จ่ายกับบัญชีของคุณ{PROVIDERS[provider].free ? " · รับคีย์ฟรีที่ aistudio.google.com" : ""}{provider !== "anthropic" ? " · ค้นเว็บสดเฉพาะ Claude" : ""}</>}
                 {(userKey.trim() || keyless) && <b className="conn-on"> ● ใช้ {PROVIDERS[provider].label}</b>}
               </div>
+              {PROVIDERS[provider].top && <div className="conn-tip">⚡ อยากได้ผลวิเคราะห์คุณภาพสูงสุด: พิมพ์ชื่อรุ่น <b>{PROVIDERS[provider].top}</b> ในช่องชื่อโมเดล{PROVIDERS[provider].keyUrl ? <> · ขอคีย์ได้ที่ <b>{PROVIDERS[provider].keyUrl}</b></> : ""}</div>}
             </div>)}
           </div>
         </section>
@@ -740,7 +768,7 @@ const CSS = `
 .how{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
 .how-step{font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;box-shadow:0 2px 8px rgba(90,105,170,.06);}
 .how-step b{color:var(--brand1);font-weight:700;}
-.grid{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1.35fr 1fr;gap:18px;align-items:start;}
+.grid{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1fr 1.35fr;gap:18px;align-items:start;}
 @media(max-width:820px){.grid{grid-template-columns:1fr;}}
 .panel{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow);}
 .panel::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad);}
@@ -778,8 +806,10 @@ const CSS = `
 .conn-sub{font-size:11.5px;color:var(--dim);margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;}
 .conn-note{font-size:11px;color:var(--dim);margin-top:9px;line-height:1.6;}
 .conn-on{color:var(--accent);font-weight:700;}
-.routing{position:sticky;top:16px;}
-@media(max-width:820px){.routing{position:static;}}
+.conn-tip{font-size:11px;color:var(--brand1);background:var(--chipOn);border:1px solid var(--brand1);border-radius:9px;padding:8px 11px;margin-top:9px;line-height:1.6;}
+.conn-tip b{color:var(--brand1);font-weight:700;}
+.routing{position:sticky;top:16px;order:-1;}
+@media(max-width:820px){.routing{position:static;order:0;}}
 .route-line{display:flex;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line);}
 .route-k{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);min-width:74px;padding-top:2px;}
 .route-v{color:var(--text);flex:1;}
