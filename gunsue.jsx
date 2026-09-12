@@ -853,7 +853,7 @@ const CSS = `
 .conn-on{color:var(--accent);font-weight:700;}
 .conn-tip{font-size:11px;color:var(--brand1);background:var(--chipOn);border:1px solid var(--brand1);border-radius:9px;padding:8px 11px;margin-top:9px;line-height:1.6;}
 .conn-tip b{color:var(--brand1);font-weight:700;}
-.routing{position:sticky;top:16px;order:-1;}
+.routing{position:static;}
 @media(max-width:820px){.routing{position:static;order:0;}}
 .route-line{display:flex;gap:10px;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line);}
 .route-k{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);min-width:74px;padding-top:2px;}
