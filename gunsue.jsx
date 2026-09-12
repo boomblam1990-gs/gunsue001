@@ -5,7 +5,7 @@ import React, { useState, useMemo, useRef } from "react";
    ============================================================ */
 const NAME = "กุนซือ";
 const NAME_EN = "Gunsue · Strategic Advisor";
-const VERSION = "5.3.0";
+const VERSION = "5.4.0";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const MODEL_PREVIEW = "claude-sonnet-4-6";
 const MAX_TOKENS = 6000;
@@ -82,9 +82,9 @@ const FOLLOW = [
   { key: "evaluate", label: "วางตัวชี้วัด/ประเมินผล", deliver: "กรอบติดตามประเมินผล: Logic Model ตัวชี้วัดนำ/ตาม วิธีเก็บข้อมูล รอบการประเมิน และเกณฑ์ความสำเร็จ" },
 ];
 const EXTRAS = {
-  slides: { label: "โครงสไลด์นำเสนอ", prompt: (b) => `ออกแบบโครงสไลด์นำเสนอ 8–12 สไลด์ จากผลวิเคราะห์ด้านล่าง ภาษาไทย Markdown ใช้รูปแบบ "## สไลด์ N: หัวข้อ" ตามด้วยหัวข้อย่อยเป็น bullet สั้น\n\n${b}` },
-  qa: { label: "Q&A เตรียมตอบกรรมการ", prompt: (b) => `คาดการณ์คำถามที่กรรมการ/ผู้บริหารน่าจะถาม 8–10 ข้อ จากผลวิเคราะห์ด้านล่าง พร้อมแนวคำตอบที่หนักแน่น ภาษาไทย Markdown จัดเป็น "### Q: ..." แล้วบรรทัด "A: ..."\n\n${b}` },
-  memo: { label: "บันทึกเสนอผู้บริหาร", prompt: (b) => `ร่างบันทึกข้อความราชการเสนอผู้บริหาร จากผลวิเคราะห์ด้านล่าง ภาษาไทย Markdown มีหัวข้อ: เรื่อง / เรียน / ต้นเรื่อง / ข้อเท็จจริง / ข้อพิจารณา / ข้อเสนอเพื่อโปรดพิจารณา\n\n${b}` },
+  slides: { label: "สไลด์นำเสนอ (มีเนื้อหา)", prompt: (b) => `จัดทำสไลด์นำเสนอ 8–12 สไลด์ จากผลวิเคราะห์ด้านล่าง ภาษาไทย Markdown รูปแบบ "## สไลด์ N: หัวข้อ" แล้วใส่ "เนื้อหาจริง" ในแต่ละสไลด์เป็น bullet ที่พร้อมพูด/นำเสนอได้ทันที (ไม่ใช่แค่หัวข้อ) ส่วนใดที่ยังไม่มีข้อมูลจริงให้ใส่ (.....เติมข้อมูล.....) ไว้ตรงตำแหน่งนั้น\n\n${b}` },
+  qa: { label: "Q&A ที่ควรรู้", prompt: (b) => `คาดการณ์คำถามที่ควรรู้/น่าจะถูกถาม 8–10 ข้อ จากผลวิเคราะห์ด้านล่าง พร้อมแนวคำตอบที่หนักแน่น ภาษาไทย Markdown จัดเป็น "### Q: ..." แล้วบรรทัด "A: ..."\n\n${b}` },
+  memo: { label: "บันทึกเสนอผู้บริหาร", prompt: (b) => `ร่างบันทึกข้อความราชการเสนอผู้บริหารฉบับเต็มพร้อมเนื้อหาจริง จากผลวิเคราะห์ด้านล่าง ภาษาไทย Markdown มีหัวข้อครบ: ที่/วันที่ / เรื่อง / เรียน / ต้นเรื่อง / ข้อเท็จจริง / ข้อพิจารณา / ข้อเสนอเพื่อโปรดพิจารณา / ลงชื่อ — เขียนเนื้อหาให้ครบทุกส่วน ส่วนใดที่ยังไม่มีข้อมูลจริง (เลขที่หนังสือ วันที่ ชื่อผู้ลงนาม ฯลฯ) ให้ใส่ (.....เติมข้อมูล.....)\n\n${b}` },
   action: { label: "แผนปฏิบัติการ + RACI", prompt: (b) => `จัดทำแผนปฏิบัติการจากผลวิเคราะห์ด้านล่าง ภาษาไทย Markdown เป็นตาราง: กิจกรรม | ผู้รับผิดชอบ (R/A/C/I) | ระยะเวลา | ตัวชี้วัด | งบโดยสังเขป อย่างน้อย 6 กิจกรรม\n\n${b}` },
   risk: { label: "ทะเบียนความเสี่ยง", prompt: (b) => `จัดทำทะเบียนความเสี่ยงจากผลวิเคราะห์ด้านล่าง ภาษาไทย Markdown เป็นตาราง: ความเสี่ยง | โอกาส | ผลกระทบ | ระดับ | มาตรการรับมือ | ผู้รับผิดชอบ อย่างน้อย 6 รายการ\n\n${b}` },
   kpi: { label: "ชุดตัวชี้วัด (KPI)", prompt: (b) => `ออกแบบชุดตัวชี้วัดจากผลวิเคราะห์ด้านล่าง ภาษาไทย Markdown เป็นตาราง: ตัวชี้วัด | ประเภท (นำ/ตาม) | เป้าหมาย | วิธีเก็บข้อมูล | ความถี่ | ผู้รับผิดชอบ อย่างน้อย 6 ตัว\n\n${b}` },
@@ -291,7 +291,7 @@ export default function Gunsue() {
   const [prep, setPrep] = useState(""); const [prepLoading, setPrepLoading] = useState(false); const [prepErr, setPrepErr] = useState("");
   const [extra, setExtra] = useState(""); const [extraKey, setExtraKey] = useState(""); const [extraLoading, setExtraLoading] = useState(false); const [extraErr, setExtraErr] = useState("");
   const [mindmap, setMindmap] = useState(null); const [mmLoading, setMmLoading] = useState(false); const [mmError, setMmError] = useState("");
-  const [fwOpen, setFwOpen] = useState(null);
+  const [showFwList, setShowFwList] = useState(false);
   const [copied, setCopied] = useState(false);
   const [refine, setRefine] = useState("");
 
@@ -409,7 +409,7 @@ export default function Gunsue() {
     const fw = routeFrameworks(pl, horizon, sectors).active;
     const pLabels = pl.map((k, i) => `${i + 1}) ${PURPOSES[k].label}`).join("  ");
     const secStr = allSectors().join(", ");
-    setRanConfig({ topic, sectors: secStr, purposes: pl.map((k) => PURPOSES[k].label).join(" + "), org: ORG[org].label, user: USER[userLv].label, hasFiles: files.length, frameworks: fw, provider: PROVIDERS[provider].label });
+    setRanConfig({ topic, sectors: secStr, purposes: pl.map((k) => PURPOSES[k].label).join(" + "), org: ORG[org].label, user: USER[userLv].label, hasFiles: files.length, frameworks: fw, provider: PROVIDERS[provider].label, model: modelName() });
     const useWeb = !!opts.web && canGround;
     const basis = opts.basis ? `\n[ผลวิเคราะห์ก่อนหน้า — ใช้เป็นวัตถุดิบตั้งต้น]\n${opts.basis.slice(0, 1800)}\n` : "";
     const extraLine = opts.extra ? `\n[ข้อมูล/คำสั่งเพิ่มเติมจากผู้ใช้ — นำไปปรับผลลัพธ์]\n${opts.extra.slice(0, 1200)}\n` : "";
@@ -507,28 +507,32 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
     if (t === "prep" && !prep && !prepLoading) makePrep();
     if (t === "mindmap" && !mindmap && !mmLoading) makeMindmap();
   };
-  const copyReport = async () => { try { await navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch (e) {} };
+  const currentContent = () => {
+    if (view === "onepager") return { title: "บทสรุปผู้บริหาร", md: onepager };
+    if (view === "prep") return { title: "แนวทาง & เตรียมข้อมูล", md: prep };
+    if (view === "extra") return { title: EXTRAS[extraKey]?.label || "ผลลัพธ์เพิ่มเติม", md: extra };
+    if (view === "tools") return { title: "เครื่องมือ & อ้างอิง", md: usedFw.map((f) => `## ${f}\n${fwMeta(f).why}\n\nอ้างอิง: ${fwMeta(f).ref}`).join("\n\n") };
+    if (view === "mindmap") return { title: "มายด์แมพ", md: mindmap ? `# ${mindmap.root || topic}\n\n` + (mindmap.branches || []).map((br) => `## ${br.name}\n` + (br.children || []).map((c) => `- ${c}`).join("\n")).join("\n\n") : "" };
+    return { title: "รายงานวิเคราะห์", md: result };
+  };
+  const copyReport = async () => { const { md } = currentContent(); if (!md) return; try { await navigator.clipboard.writeText(md); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch (e) {} };
 
   function exportDoc() {
-    if (!result) return;
+    const { title, md } = currentContent();
+    if (!md) return;
     const c = ranConfig || {};
     const dateStr = new Date().toLocaleDateString("th-TH");
-    const cfgRows = [["หัวข้อ", c.topic || topic], ["สายงาน", c.sectors || allSectors().join(", ")], ["จุดประสงค์", c.purposes || ""], ["ระดับองค์กร", c.org || ""], ["ระดับผู้ใช้", c.user || ""], ["วันที่ออกรายงาน", dateStr]]
+    const cfgRows = [["หัวข้อ", c.topic || topic], ["สายงาน", c.sectors || allSectors().join(", ")], ["จุดประสงค์", c.purposes || ""], ["ระดับองค์กร", c.org || ""], ["ระดับผู้ใช้", c.user || ""], ["ส่วนที่ส่งออก", title], ["วันที่ออกรายงาน", dateStr]]
       .map((r) => `<tr><td class="k">${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("");
-    let body = `<div class="cover"><div class="brand">${esc(NAME)} · ${esc(NAME_EN)} v${VERSION}</div><h1 class="doctitle">${esc(c.topic || topic)}</h1><table class="cfg">${cfgRows}</table></div>`;
-    body += blocksToHtml(parseBlocks(result));
-    if (onepager) body += `<h1 class="sec">บทสรุปผู้บริหาร</h1>` + blocksToHtml(parseBlocks(onepager));
-    if (prep) body += `<h1 class="sec">แนวทาง &amp; เตรียมข้อมูล</h1>` + blocksToHtml(parseBlocks(prep));
-    if (extra) body += `<h1 class="sec">${esc(EXTRAS[extraKey]?.label || "ผลลัพธ์เพิ่มเติม")}</h1>` + blocksToHtml(parseBlocks(extra));
-    body += `<h1 class="sec">เครื่องมือที่ใช้และแหล่งอ้างอิงระเบียบวิธี</h1><table class="rpt"><tr><th>เครื่องมือ</th><th>เหตุผลการใช้</th><th>อ้างอิง</th></tr>`;
-    usedFw.forEach((f) => { const m = fwMeta(f); body += `<tr><td>${esc(f)}</td><td>${esc(m.why)}</td><td>${esc(m.ref)}</td></tr>`; });
-    body += `</table>`;
-    if (sources.length) { body += `<h1 class="sec">แหล่งข้อมูลค้นเว็บสด</h1><ol>`; sources.forEach((s) => { body += `<li>${esc(s.title)} — ${esc(s.url)}</li>`; }); body += `</ol>`; }
+    let body = `<div class="cover"><div class="brand">${esc(NAME)} · ${esc(NAME_EN)} v${VERSION}</div><h1 class="doctitle">${esc(c.topic || topic)} — ${esc(title)}</h1><table class="cfg">${cfgRows}</table></div>`;
+    body += `<div class="disc">⚠ ผลนี้วิเคราะห์โดย AI (${esc(c.provider || "")}${c.model ? " · " + esc(c.model) : ""}) เป็นข้อมูลประกอบการตัดสินใจเบื้องต้น ผู้ใช้ควรตรวจสอบความถูกต้องอีกครั้งก่อนนำไปใช้</div>`;
+    body += blocksToHtml(parseBlocks(md));
+    if (view === "report" && sources.length) { body += `<h1 class="sec">แหล่งข้อมูลค้นเว็บสด</h1><ol>`; sources.forEach((s) => { body += `<li>${esc(s.title)} — ${esc(s.url)}</li>`; }); body += `</ol>`; }
     body += `<div class="sign">พัฒนาโดย ${esc(DEV.name)} · ${esc(DEV.role)}<br/>${esc(DEV.unit)} ${esc(DEV.org)}</div>`;
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${esc(c.topic || topic)}</title><style>${DOC_CSS}</style></head><body>${body}</body></html>`;
     const blob = new Blob(["\ufeff", html], { type: "application/msword" });
     const url = URL.createObjectURL(blob); const a = document.createElement("a");
-    a.href = url; a.download = `${esc(NAME)}_${(c.topic || topic).replace(/[\\/\s]+/g, "_").slice(0, 40)}.doc`; a.click();
+    a.href = url; a.download = `${esc(NAME)}_${(title).replace(/[\\/\s]+/g, "_").slice(0, 30)}.doc`; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
@@ -619,13 +623,14 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
           <div className="route-line"><span className="route-k">โจทย์</span><span className="route-v">{topic || "—"}</span></div>
           <div className="route-line"><span className="route-k">จุดประสงค์</span><span className="route-v hl">{purposes.length ? purposes.map((k) => PURPOSES[k].label).join(" + ") : "— เลือกอย่างน้อย 1"}</span></div>
           <div className="route-mini"><span>{ORG[org].label}</span><i>·</i><span>{USER[userLv].label}</span><i>·</i><span>{HORIZONS[horizon].label.split(" · ")[0]}</span></div>
-          <div className="fw-head">เครื่องมือที่จะเรียกใช้ <span className="fw-count">{active.length}</span> <em className="fw-hint">คลิกเพื่อดูเหตุผล</em></div>
+          <div className="fw-head">เครื่องมือที่จะเรียกใช้ <span className="fw-count">{active.length}</span></div>
           <div className="chips fw-chips">
-            {active.map((f) => <button key={f} className={"fw active" + (fwOpen === f ? " fw-sel" : "") + (f === "6BB+1" ? " fw-special" : "")} onClick={() => setFwOpen(fwOpen === f ? null : f)}>{f}</button>)}
+            {active.map((f) => <span key={f} className={"fw active" + (f === "6BB+1" ? " fw-special" : "")}>{f}</span>)}
             {struck.map((f) => <span key={f} className="fw struck" title="ตัดออกเพราะกรอบเวลาสั้น">{f}</span>)}
             {active.length === 0 && <span className="fw-empty">เลือกจุดประสงค์เพื่อดูเส้นทาง</span>}
           </div>
-          {fwOpen && (<div className="fw-detail"><div className="fw-detail-name">{fwOpen}</div><div className="fw-detail-why">{fwMeta(fwOpen).why}</div><div className="fw-detail-ref">อ้างอิง: {fwMeta(fwOpen).ref}</div></div>)}
+          {active.length > 0 && <button type="button" className="fw-toggle" onClick={() => setShowFwList((s) => !s)}>{showFwList ? "▾ ซ่อนเหตุผลเครื่องมือ" : "▸ เปิดดูเครื่องมือ & เหตุผล"}</button>}
+          {showFwList && (<div className="fw-list">{active.map((f) => (<div key={f} className="fw-li"><div className="fw-li-name">{f}</div><div className="fw-li-why">{fwMeta(f).why}</div><div className="fw-li-ref">อ้างอิง: {fwMeta(f).ref}</div></div>))}</div>)}
           {struck.length > 0 && <div className="strip-note">กรอบเวลาสั้น → ตัดเครื่องมือมองอนาคตออก</div>}
           <label className={"ground" + (canGround ? "" : " ground-off")}><input type="checkbox" checked={grounding && canGround} disabled={!canGround} onChange={(e) => setGrounding(e.target.checked)} /><span>🌐 ค้นเว็บสด (grounding) — หาตัวเลขล่าสุดพร้อมอ้างอิง <em>{canGround ? "ช้าลงเล็กน้อย" : "เฉพาะ Claude"}</em></span></label>
           {dirty && <div className="strip-note">อินพุตเปลี่ยน — กด “▶ วิเคราะห์ใหม่” ด้านบนเพื่ออัปเดต</div>}
@@ -635,16 +640,13 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
 
         {result && (
         <section className="panel">
-          <div className="panel-head"><span className="panel-ic">📑</span><span className="panel-title">มุมมองผลลัพธ์</span></div>
-          <div className="viewlist">{TABS.map((t) => (
-            <button key={t.k} className={"viewbtn" + (view === t.k ? " on" : "")} onClick={() => goTab(t.k)}><span>{t.ic}</span>{t.label}{t.k === "report" ? " (หลัก)" : ""}</button>
-          ))}</div>
-          <div className="side-sec">
-            <div className="side-lbl">🔗 ต่อยอดผลนี้ให้เป็นผลงานพร้อมใช้</div>
+          <div className="panel-head"><span className="panel-ic">🔗</span><span className="panel-title">ต่อยอด &amp; ปรับแต่ง</span></div>
+          <div className="side-sec0">
+            <div className="side-lbl">ต่อยอดผลนี้ให้เป็นผลงานพร้อมใช้</div>
             <div className="chips">{FOLLOW.map((f) => (<button key={f.key} className="follow-btn" disabled={loading} onClick={() => runFollow(f)} title={f.deliver}>{f.label}</button>))}</div>
           </div>
           <div className="side-sec">
-            <div className="side-lbl">✎ ปรับแต่ง / เพิ่มข้อมูล แล้วประมวลผลใหม่</div>
+            <div className="side-lbl">ปรับแต่ง / เพิ่มข้อมูล แล้วประมวลผลใหม่</div>
             <textarea className="ta" rows={3} value={refine} onChange={(e) => setRefine(e.target.value)} placeholder="พิมพ์ข้อมูลเพิ่มเติมหรือทิศทางที่ต้องการ เช่น 'เพิ่มมิติกำลังคน อสม.'" />
             <button className="refine-btn" disabled={loading || !refine.trim()} onClick={runRefine}>↻ ประมวลผลใหม่พร้อมข้อมูลนี้</button>
           </div>
@@ -660,6 +662,9 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
             <div className="sk-pulse">กุนซือกำลังรันเครื่องมือ {active.length} ตัว{files.length ? ` · อ่านไฟล์ ${files.length}` : ""}{grounding && canGround ? " · ค้นเว็บ" : ""}…</div></div>)}
 
           {result && (<>
+            <div className="tabbar">{TABS.map((t) => (
+              <button key={t.k} className={"tab" + (view === t.k ? " tab-on" : "")} onClick={() => goTab(t.k)}><span className="tab-ic">{t.ic}</span>{t.label}</button>
+            ))}</div>
             <div className="report-head">
               {ranConfig && (<div className="out-config-row">
                 <span className="oc">{ranConfig.topic}</span><i>·</i><span>{ranConfig.sectors}</span><i>·</i><span>{ranConfig.purposes}</span><i>·</i><span>{ranConfig.org}</span><i>·</i><span>{ranConfig.user}</span>
@@ -668,10 +673,11 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
                 <i>·</i><span className="oc">{ranConfig.provider}</span>
               </div>)}
               <div className="report-bar">
-                <button className="mini-btn" onClick={copyReport}>{copied ? "✓ คัดลอกแล้ว" : "⧉ คัดลอก"}</button>
-                <button className="mini-btn primary" onClick={exportDoc}>⬇ ดาวน์โหลด (Word)</button>
+                <button className="mini-btn" onClick={copyReport}>{copied ? "✓ คัดลอกแล้ว" : "⧉ คัดลอกหน้านี้"}</button>
+                <button className="mini-btn primary" onClick={exportDoc}>⬇ ดาวน์โหลดหน้านี้ (Word)</button>
               </div>
             </div>
+            {ranConfig && <div className="disclaimer">⚠ ผลนี้วิเคราะห์โดย AI ({ranConfig.provider}{ranConfig.model ? " · " + ranConfig.model : ""}) เป็นข้อมูลประกอบการตัดสินใจเบื้องต้น — ผู้ใช้ควรตรวจสอบความถูกต้องอีกครั้งก่อนนำไปใช้</div>}
 
             {view === "report" && (<>
               <Markdown text={result} />
@@ -738,6 +744,7 @@ table.rpt th{background:#6D5FEF;color:#fff;border:1px solid #6D5FEF;padding:6px 
 table.rpt td{border:1px solid #bbb;padding:6px 10px;vertical-align:top;}
 ul,ol{margin:8px 0 8px 22px;}
 .sign{margin-top:32px;padding-top:12px;border-top:1px solid #ccc;font-size:13pt;color:#555;}
+.disc{font-size:12pt;color:#8a4a2a;background:#fdeee6;border:1px solid #e8c4b0;border-radius:6px;padding:8px 12px;margin:14px 0;}
 hr{border:none;border-top:1px solid #ccc;margin:16px 0;}
 `;
 const CSS = `
@@ -797,7 +804,17 @@ const CSS = `
 .viewbtn.on{background:var(--gradbtn);color:#fff;border-color:transparent;font-weight:700;box-shadow:0 5px 14px rgba(109,95,239,.35);}
 .viewbtn span{font-size:16px;line-height:1;}
 .side-sec{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);}
+.side-sec0{margin-top:4px;}
 .side-lbl{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:10px;}
+.fw-toggle{margin-top:10px;background:var(--field);border:1px solid var(--line);color:var(--brand1);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;border-radius:9px;padding:8px 12px;width:100%;text-align:left;}
+.fw-toggle:hover{border-color:var(--brand1);}
+.fw-list{margin-top:8px;display:flex;flex-direction:column;gap:7px;}
+.fw-li{background:var(--field);border:1px solid var(--line);border-left:3px solid var(--brand1);border-radius:9px;padding:9px 11px;}
+.fw-li-name{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--brand1);font-weight:700;margin-bottom:3px;}
+.fw-li-why{font-size:12.5px;color:var(--body);line-height:1.5;}
+.fw-li-ref{font-size:11px;color:var(--muted);font-style:italic;margin-top:3px;}
+.report-area .tabbar{margin:-4px 0 16px;}
+.disclaimer{font-size:12px;color:var(--warn);background:rgba(240,97,122,.08);border:1px solid rgba(240,97,122,.3);border-radius:10px;padding:9px 13px;margin-bottom:18px;line-height:1.6;}
 .panel{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow);}
 .panel::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad);}
 .panel-head{display:flex;align-items:center;gap:11px;margin-bottom:18px;}
