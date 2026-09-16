@@ -18,6 +18,7 @@ const PROVIDERS = {
   anthropic:  { label: "Claude", def: "claude-sonnet-5", sugg: ["claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5"], keyHint: "sk-ant-...", top: "claude-opus-4-8", keyUrl: "console.anthropic.com" },
   google:     { label: "Gemini (Google) · มีชั้นฟรี", def: "gemini-1.5-pro", sugg: ["gemini-1.5-pro", "gemini-2.0-flash", "gemini-1.5-flash"], keyHint: "AIza...", free: true, top: "gemini-1.5-pro", keyUrl: "aistudio.google.com" },
   openai:     { label: "ChatGPT (OpenAI)", def: "gpt-4.1", sugg: ["gpt-4.1", "gpt-4o", "o4-mini", "gpt-4o-mini"], keyHint: "sk-...", top: "gpt-4.1", keyUrl: "platform.openai.com/api-keys" },
+  openrouter: { label: "OpenRouter (300+ โมเดล คีย์เดียว)", def: "openrouter/free", sugg: ["openrouter/free", "anthropic/claude-sonnet-4", "google/gemini-2.5-pro", "meta-llama/llama-3.3-70b:free", "nvidia/nemotron-3-ultra"], keyHint: "sk-or-...", top: "anthropic/claude-sonnet-4", keyUrl: "openrouter.ai/keys" },
   compatible: { label: "อื่น ๆ (OpenAI-compatible)", def: "", sugg: ["deepseek-chat", "grok-2", "qwen-max"], keyHint: "คีย์ของผู้ให้บริการ" },
 };
 let puterPromise = null;
@@ -368,12 +369,16 @@ export default function Gunsue() {
       const srcs = []; (data.content || []).forEach((b) => { if (b.type === "web_search_tool_result" && Array.isArray(b.content)) b.content.forEach((r) => { if (r && r.url) srcs.push({ url: r.url, title: r.title || r.url }); }); });
       return { text, sources: srcs };
     }
-    if (provider === "openai" || provider === "compatible") {
+    if (provider === "openai" || provider === "compatible" || provider === "openrouter") {
       if (!key) throw new Error("no-key");
-      const url = provider === "compatible" ? baseUrl.trim().replace(/\/+$/, "") + "/v1/chat/completions" : "https://api.openai.com/v1/chat/completions";
+      const url = provider === "openrouter" ? "https://openrouter.ai/api/v1/chat/completions"
+        : provider === "compatible" ? baseUrl.trim().replace(/\/+$/, "") + "/v1/chat/completions"
+        : "https://api.openai.com/v1/chat/completions";
       const content = imgs.length ? [{ type: "text", text: full }, ...imgs.map((f) => ({ type: "image_url", image_url: { url: `data:${f.media};base64,${f.data}` } }))] : full;
       const body = { model: modelName(), messages: [{ role: "user", content }], max_tokens: opts.maxOut || MAX_TOKENS };
-      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key }, body: JSON.stringify(body) });
+      const headers = { "Content-Type": "application/json", "Authorization": "Bearer " + key };
+      if (provider === "openrouter") { headers["HTTP-Referer"] = (typeof window !== "undefined" ? window.location.origin : ""); headers["X-Title"] = "Gunsue"; }
+      const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
       return { text: data.choices?.[0]?.message?.content || "", sources: [] };
@@ -557,7 +562,7 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
           <button className="theme-btn" onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}>{theme === "dark" ? "☀ สว่าง" : "🌙 มืด"}</button>
         </div>
         <div className="accent-bar" />
-        <p className="sub">{NAME_EN} — ป้อนโจทย์ กุนซือจะเลือกเครื่องมือที่เหมาะพร้อมเหตุผลและแหล่งอ้างอิง แล้ววิเคราะห์ให้ครบทุกมิติ ปรับใช้ได้ทุกหน่วยงาน ทุกระดับ</p>
+        <p className="sub"><b>กุนซือ (Gunsue)</b> เป็นระบบสนับสนุนการวางแผนเชิงยุทธศาสตร์ที่ประยุกต์ปัญญาประดิษฐ์เข้ากับกรอบทฤษฎีการบริหารยุทธศาสตร์ ช่วยวิเคราะห์ประเด็นตั้งแต่การประเมินสถานการณ์ การกำหนดทางเลือก การจัดทำแผนงาน จนถึงการติดตามประเมินผล โดยอ้างอิงระเบียบวิธีที่เป็นมาตรฐานสากล เพื่อสนับสนุนการตัดสินใจของผู้บริหารและผู้ปฏิบัติงานในทุกระดับ</p>
         <div className="dev">พัฒนาโดย <b>{DEV.name}</b> · {DEV.role} · {DEV.unit} {DEV.org}</div>
         <button className="how-toggle" onClick={() => setShowHow((s) => !s)}>{showHow ? "▾" : "▸"} หลักการทำงานของกุนซือ</button>
         {showHow && (<div className="how">
@@ -779,7 +784,8 @@ const CSS = `
 .theme-btn{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:9px 14px;cursor:pointer;white-space:nowrap;box-shadow:0 3px 12px rgba(90,105,170,.12);}
 .theme-btn:hover{border-color:var(--brand1);}
 .accent-bar{height:5px;border-radius:999px;background:var(--grad);margin:16px 0 14px;max-width:180px;}
-.sub{color:var(--muted);margin:0;font-size:15px;max-width:730px;}
+.sub{color:var(--muted);margin:0;font-size:15px;max-width:860px;line-height:1.7;}
+.sub b{color:var(--text);font-weight:700;}
 .dev{margin-top:12px;font-size:12.5px;color:var(--muted);border-left:3px solid var(--brand1);padding-left:10px;}
 .dev b{color:var(--text);}
 .how-toggle{background:none;border:none;color:var(--brand1);font-family:inherit;font-size:12.5px;cursor:pointer;padding:0;margin-top:14px;font-weight:600;}
