@@ -5,7 +5,7 @@ import React, { useState, useMemo, useRef } from "react";
    ============================================================ */
 const NAME = "กุนซือ";
 const NAME_EN = "Gunsue · Strategic Advisor";
-const VERSION = "5.4.0";
+const VERSION = "5.5.0";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const MODEL_PREVIEW = "claude-sonnet-4-6";
 const MAX_TOKENS = 6000;
@@ -555,13 +555,16 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
     <div className={"root " + theme}>
       <style>{CSS}</style>
       <header className="head">
-        <div className="head-top">
-          <div className="brand-mark"><span className="logo">ก</span>
-            <div><div className="brand-name">{NAME}</div><div className="eyebrow">เครื่องยนต์บริหารยุทธศาสตร์ · v{VERSION}</div></div>
+        <div className="banner">
+          <div className="banner-left">
+            <span className="logo">ก</span>
+            <div>
+              <div className="banner-org">เครื่องยนต์บริหารยุทธศาสตร์อัจฉริยะ · v{VERSION}</div>
+              <div className="banner-title">{NAME} <span className="banner-title-en">Gunsue · Strategic Advisor</span></div>
+            </div>
           </div>
-          <button className="theme-btn" onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}>{theme === "dark" ? "☀ สว่าง" : "🌙 มืด"}</button>
+          <button className="theme-btn banner-theme" onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}>{theme === "dark" ? "☀ สว่าง" : "🌙 มืด"}</button>
         </div>
-        <div className="accent-bar" />
         <p className="sub"><b>กุนซือ (Gunsue)</b> เป็นระบบสนับสนุนการวางแผนเชิงยุทธศาสตร์ที่ประยุกต์ปัญญาประดิษฐ์เข้ากับกรอบทฤษฎีการบริหารยุทธศาสตร์ ช่วยวิเคราะห์ประเด็นตั้งแต่การประเมินสถานการณ์ การกำหนดทางเลือก การจัดทำแผนงาน จนถึงการติดตามประเมินผล โดยอ้างอิงระเบียบวิธีที่เป็นมาตรฐานสากล เพื่อสนับสนุนการตัดสินใจของผู้บริหารและผู้ปฏิบัติงานในทุกระดับ</p>
         <div className="dev">พัฒนาโดย <b>{DEV.name}</b> · {DEV.role} · {DEV.unit} {DEV.org}</div>
         <button className="how-toggle" onClick={() => setShowHow((s) => !s)}>{showHow ? "▾" : "▸"} หลักการทำงานของกุนซือ</button>
@@ -667,6 +670,12 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
             <div className="sk-pulse">กุนซือกำลังรันเครื่องมือ {active.length} ตัว{files.length ? ` · อ่านไฟล์ ${files.length}` : ""}{grounding && canGround ? " · ค้นเว็บ" : ""}…</div></div>)}
 
           {result && (<>
+            <div className="statstrip">
+              <div className="statcard"><span className="stat-ic si-b">🧰</span><div><div className="stat-lbl">เครื่องมือที่ใช้</div><div className="stat-val">{usedFw.length}</div></div></div>
+              <div className="statcard"><span className="stat-ic si-g">📑</span><div><div className="stat-lbl">มุมมองผลลัพธ์</div><div className="stat-val">{TABS.length}</div></div></div>
+              <div className="statcard"><span className="stat-ic si-b">🤖</span><div><div className="stat-lbl">ค่าย AI</div><div className="stat-val sm">{(ranConfig && ranConfig.provider) || "-"}</div></div></div>
+              <div className="statcard"><span className="stat-ic si-g">✓</span><div><div className="stat-lbl">สถานะ</div><div className="stat-val sm">{usedGrounding ? "ค้นเว็บสด" : "วิเคราะห์แล้ว"}</div></div></div>
+            </div>
             <div className="tabbar">{TABS.map((t) => (
               <button key={t.k} className={"tab" + (view === t.k ? " tab-on" : "")} onClick={() => goTab(t.k)}><span className="tab-ic">{t.ic}</span>{t.label}</button>
             ))}</div>
@@ -755,35 +764,45 @@ hr{border:none;border-top:1px solid #ccc;margin:16px 0;}
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 .root{
-  --bg:#EEF2FB;--panel:#FFFFFF;--panel2:#F4F7FD;--line:#E7ECF7;--field:#F6F9FE;
-  --text:#1E2A44;--muted:#6B7793;--dim:#9AA4BE;--body:#3A4763;
-  --brand1:#6D5FEF;--brand2:#22B7E6;--accent:#16B981;--warn:#F0617A;--signal:#22B7E6;
-  --chipOn:rgba(109,95,239,.10);--fwOn:rgba(34,183,230,.12);--link:#2A7FE8;--danger:#E5566E;
-  --grad:linear-gradient(90deg,#22B7E6,#7C5CF7);--gradbtn:linear-gradient(135deg,#6D5FEF,#22B7E6);
-  --shadow:0 12px 34px rgba(90,105,170,.14);
+  --bg:#EEF3F7;--panel:#FFFFFF;--panel2:#F3F8FB;--line:#E1E9F0;--field:#F4F9FC;
+  --text:#173049;--muted:#5C7186;--dim:#94A6B6;--body:#33485C;
+  --brand1:#1C6DB5;--brand2:#14A085;--accent:#16A34A;--warn:#E0533D;--signal:#14A085;
+  --chipOn:rgba(28,109,181,.10);--fwOn:rgba(20,160,133,.12);--link:#1C6DB5;--danger:#DB4A38;
+  --grad:linear-gradient(100deg,#16548C,#12936F);--gradbtn:linear-gradient(135deg,#1C6DB5,#14A085);
+  --banner:linear-gradient(100deg,#134B82 0%,#127A6C 60%,#159A6E 100%);
+  --shadow:0 10px 30px rgba(30,70,110,.10);
   color:var(--text);min-height:100vh;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;line-height:1.55;padding:clamp(16px,4vw,40px);box-sizing:border-box;
-  background:radial-gradient(1000px 480px at 8% -12%,rgba(124,92,247,.10),transparent 60%),radial-gradient(820px 440px at 100% -6%,rgba(34,183,230,.10),transparent 55%),var(--bg);
+  background:radial-gradient(1000px 480px at 8% -12%,rgba(28,109,181,.10),transparent 60%),radial-gradient(820px 440px at 100% -6%,rgba(20,160,133,.10),transparent 55%),var(--bg);
   transition:background .25s,color .25s;
 }
 .root.dark{
-  --bg:#0E1020;--panel:#181C30;--panel2:#20263F;--line:#2C3350;--field:#12162A;
-  --text:#ECF0FF;--muted:#98A2C6;--dim:#69739B;--body:#C7D0EC;
-  --brand1:#8B7BFF;--brand2:#2FC3F0;--accent:#2DD4BF;--warn:#FB7185;--signal:#2FC3F0;
-  --chipOn:rgba(139,123,255,.16);--fwOn:rgba(47,195,240,.14);--link:#7DE3D4;--danger:#FB7185;
-  --grad:linear-gradient(90deg,#2FC3F0,#8B7BFF);--gradbtn:linear-gradient(135deg,#8B7BFF,#2FC3F0);
-  --shadow:0 12px 34px rgba(6,8,22,.42);
-  background:radial-gradient(1000px 480px at 8% -12%,rgba(139,123,255,.20),transparent 60%),radial-gradient(820px 440px at 100% -6%,rgba(47,195,240,.14),transparent 55%),var(--bg);
+  --bg:#0C1922;--panel:#122230;--panel2:#17303F;--line:#24404F;--field:#0F2530;
+  --text:#E6F1F5;--muted:#93AEBC;--dim:#6A8695;--body:#C2D6DE;
+  --brand1:#3FA0E0;--brand2:#2CC5A0;--accent:#34D07E;--warn:#FB7185;--signal:#2CC5A0;
+  --chipOn:rgba(63,160,224,.16);--fwOn:rgba(44,197,160,.14);--link:#7FD8C4;--danger:#FB7185;
+  --grad:linear-gradient(100deg,#1C6DB5,#14A085);--gradbtn:linear-gradient(135deg,#3FA0E0,#2CC5A0);
+  --banner:linear-gradient(100deg,#123A5E,#0E5C52);
+  --shadow:0 12px 34px rgba(3,10,16,.5);
+  background:radial-gradient(1000px 480px at 8% -12%,rgba(63,160,224,.16),transparent 60%),radial-gradient(820px 440px at 100% -6%,rgba(44,197,160,.12),transparent 55%),var(--bg);
 }
 .root *{box-sizing:border-box;}
 .head{max-width:1120px;margin:0 auto 22px;}
-.head-top{display:flex;justify-content:space-between;align-items:center;gap:12px;}
-.brand-mark{display:flex;align-items:center;gap:12px;}
-.logo{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px;color:#fff;background:var(--gradbtn);box-shadow:0 8px 20px rgba(109,95,239,.42);}
-.brand-name{font-size:24px;font-weight:700;line-height:1.1;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
-.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:var(--muted);margin-top:2px;}
-.theme-btn{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:9px 14px;cursor:pointer;white-space:nowrap;box-shadow:0 3px 12px rgba(90,105,170,.12);}
+.banner{background:var(--banner);border-radius:18px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;gap:14px;box-shadow:0 12px 32px rgba(18,80,96,.28);flex-wrap:wrap;margin-bottom:16px;}
+.banner-left{display:flex;align-items:center;gap:15px;}
+.logo{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:27px;color:#fff;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);flex-shrink:0;}
+.banner-org{font-size:12.5px;color:rgba(255,255,255,.88);letter-spacing:.02em;margin-bottom:3px;}
+.banner-title{font-size:clamp(24px,4vw,34px);font-weight:700;color:#fff;line-height:1.1;}
+.banner-title-en{font-size:14px;font-weight:500;color:rgba(255,255,255,.82);margin-left:8px;}
+.theme-btn{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:9px 14px;cursor:pointer;white-space:nowrap;box-shadow:0 3px 12px rgba(30,70,110,.12);}
 .theme-btn:hover{border-color:var(--brand1);}
-.accent-bar{height:5px;border-radius:999px;background:var(--grad);margin:16px 0 14px;max-width:180px;}
+.banner-theme{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.42);color:#fff;box-shadow:none;}
+.banner-theme:hover{background:rgba(255,255,255,.28);border-color:#fff;}
+.sub{color:var(--muted);margin:0;font-size:15px;max-width:860px;line-height:1.7;}
+.sub b{color:var(--text);font-weight:700;}
+.dev{margin-top:12px;font-size:12.5px;color:var(--muted);border-left:3px solid var(--brand1);padding-left:10px;}
+.dev b{color:var(--text);}
+.how-toggle{background:none;border:none;color:var(--brand1);font-family:inherit;font-size:12.5px;cursor:pointer;padding:0;margin-top:14px;font-weight:600;}
+.how{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
 .sub{color:var(--muted);margin:0;font-size:15px;max-width:860px;line-height:1.7;}
 .sub b{color:var(--text);font-weight:700;}
 .dev{margin-top:12px;font-size:12.5px;color:var(--muted);border-left:3px solid var(--brand1);padding-left:10px;}
@@ -819,7 +838,16 @@ const CSS = `
 .fw-li-name{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--brand1);font-weight:700;margin-bottom:3px;}
 .fw-li-why{font-size:12.5px;color:var(--body);line-height:1.5;}
 .fw-li-ref{font-size:11px;color:var(--muted);font-style:italic;margin-top:3px;}
-.report-area .tabbar{margin:-4px 0 16px;}
+.report-area .tabbar{margin:0 0 16px;}
+.statstrip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+@media(max-width:640px){.statstrip{grid-template-columns:repeat(2,1fr);}}
+.statcard{display:flex;align-items:center;gap:12px;background:var(--field);border:1px solid var(--line);border-radius:14px;padding:14px;}
+.stat-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.si-b{background:var(--chipOn);}
+.si-g{background:var(--fwOn);}
+.stat-lbl{font-size:11.5px;color:var(--muted);margin-bottom:3px;}
+.stat-val{font-size:24px;font-weight:800;color:var(--brand1);line-height:1;}
+.stat-val.sm{font-size:14.5px;font-weight:700;color:var(--text);}
 .disclaimer{font-size:12px;color:var(--warn);background:rgba(240,97,122,.08);border:1px solid rgba(240,97,122,.3);border-radius:10px;padding:9px 13px;margin-bottom:18px;line-height:1.6;}
 .panel{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow);}
 .panel::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad);}
