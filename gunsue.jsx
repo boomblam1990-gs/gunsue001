@@ -5,7 +5,7 @@ import React, { useState, useMemo, useRef } from "react";
    ============================================================ */
 const NAME = "กุนซือ";
 const NAME_EN = "Gunsue · Strategic Advisor";
-const VERSION = "5.5.0";
+const VERSION = "6.1.0";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const MODEL_PREVIEW = "claude-sonnet-4-6";
 const MAX_TOKENS = 6000;
@@ -153,6 +153,32 @@ const TABS = [
   { k: "mindmap", ic: "🗺️", label: "มายด์แมพ" },
 ];
 
+/* ★ โหมดไกด์: 5 ขั้นวิเคราะห์ (ตั้งค่า → 5 ขั้น → ออกผลลัพธ์) */
+const STAGES = [
+  { k: "situation", no: 1, ic: "🔭", short: "สถานการณ์", title: "มองภาพใหญ่ · วิเคราะห์สถานการณ์แวดล้อม", desc: "PESTEL 6 ด้าน + ผู้มีส่วนได้เสีย + SWOT",
+    fw: ["PESTEL", "Stakeholder", "SWOT"],
+    spec: () => `ทำ 3 ส่วนให้ครบ: (1) PESTEL — ตาราง 6 ด้าน (การเมือง/เศรษฐกิจ/สังคม/เทคโนโลยี/สิ่งแวดล้อม/กฎหมาย) พร้อมนัยต่อโจทย์ (2) การวิเคราะห์ผู้มีส่วนได้เสีย — ตารางจัดระดับอำนาจ–ความสนใจ พร้อมแนวทางการมีส่วนร่วม (3) SWOT — ตาราง 4 ช่อง (ด้านละ ≥3 ข้อ)` },
+  { k: "deep", no: 2, ic: "🔬", short: "เชิงลึก", title: "วิเคราะห์เชิงลึกตามจุดประสงค์", desc: "เครื่องมือเฉพาะจุดประสงค์ (+6BB+1 สายสุขภาพ)",
+    fw: ["เฉพาะจุดประสงค์", "6BB+1"],
+    spec: (health, p) => `ใช้เครื่องมือที่เหมาะกับจุดประสงค์ (${p}) วิเคราะห์เจาะลึก พร้อมตาราง/รายการที่มีสาระจริง${health ? `\nและเพิ่มหัวข้อ "## ประเมินระบบสุขภาพ (6BB+1)" เป็นตาราง 7 องค์ประกอบ: องค์ประกอบ | สถานะปัจจุบัน | ช่องว่าง | ข้อเสนอ (ครบ 6 เสาหลัก WHO + การมีส่วนร่วมของประชาชน/พลังชุมชน)` : ""}` },
+  { k: "options", no: 3, ic: "🧭", short: "ทางเลือก", title: "ทางเลือกเชิงกลยุทธ์", desc: "TOWS (SO/ST/WO/WT) + Scenario หลายฉาก",
+    fw: ["TOWS", "Scenario"],
+    spec: () => `ทำ 2 ส่วน: (1) TOWS — ตารางกลยุทธ์ 4 กลุ่ม (SO/ST/WO/WT ช่องละ ≥1 กลยุทธ์ที่ทำได้จริง) (2) Scenario — อนาคต 2–3 ฉาก พร้อมกลยุทธ์ที่ทนทานทุกฉาก` },
+  { k: "action", no: 4, ic: "⚙️", short: "ปฏิบัติ", title: "แปลงสู่การปฏิบัติ (แผนงาน/โครงการ)", desc: "Logframe/OKR/Roadmap",
+    fw: ["Logframe", "OKR", "Roadmap"],
+    spec: () => `จัดทำแผนแปลงสู่การปฏิบัติ: ตารางริเริ่ม/กิจกรรม | ตัวชี้วัด | ผู้รับผิดชอบ | กรอบเวลา | งบโดยสังเขป (≥6 แถว) และสรุป OKR 2–3 ชุด (Objective + Key Results ที่วัดได้)` },
+  { k: "kpi", no: 5, ic: "📈", short: "ตัวชี้วัด", title: "ตัวชี้วัด & การติดตามประเมินผล", desc: "BSC/Logic Model — ตัวชี้วัดนำ/ตาม",
+    fw: ["BSC", "Logic Model", "KPI"],
+    spec: () => `จัดทำกรอบติดตามประเมินผล: (1) Logic Model (ทรัพยากร→กิจกรรม→ผลผลิต→ผลลัพธ์) (2) ตารางตัวชี้วัด: ตัวชี้วัด | ประเภท(นำ/ตาม) | เป้าหมาย | วิธีเก็บข้อมูล | รอบการวัด | ผู้รับผิดชอบ (≥6 ตัว)` },
+];
+const GSTEPS = [{ ic: "⚙️", label: "ตั้งค่า" }, ...STAGES.map((s) => ({ ic: s.ic, label: s.short })), { ic: "📤", label: "ออกผลลัพธ์" }];
+const NAV = [
+  { k: "setup", ic: "🎯", label: "ตั้งโจทย์" },
+  { k: "route", ic: "🧭", label: "เส้นทาง / วิเคราะห์" },
+  { k: "result", ic: "📊", label: "ผลลัพธ์" },
+  { k: "about", ic: "💡", label: "เกี่ยวกับ / วิธีใช้" },
+];
+
 /* ============================================================
    2) Markdown
    ============================================================ */
@@ -295,6 +321,18 @@ export default function Gunsue() {
   const [showFwList, setShowFwList] = useState(false);
   const [copied, setCopied] = useState(false);
   const [refine, setRefine] = useState("");
+
+  // ★ app shell
+  const [navOpen, setNavOpen] = useState(false);
+  const [activeNav, setActiveNav] = useState("setup");
+
+  // ★ โหมด & สเต็ปเปอร์
+  const [mode, setMode] = useState("quick");      // "quick" | "guided"
+  const [step, setStep] = useState(0);            // 0=ตั้งค่า, 1–5=ขั้นวิเคราะห์, 6=ออกผลลัพธ์
+  const [stageOut, setStageOut] = useState({});   // { situation:"", deep:"", ... }
+  const [stageLoading, setStageLoading] = useState("");
+  const [stageErr, setStageErr] = useState("");
+  const [stgRefine, setStgRefine] = useState("");
 
   const { active, struck } = useMemo(() => routeFrameworks(purposes, horizon, sectors), [purposes, horizon, sectors]);
   const allSectors = () => sectors.map((s) => (s === "อื่นๆ" && customSector.trim() ? customSector.trim() : s));
@@ -476,6 +514,56 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
   const runFollow = (f) => generate({ purposes: [f.key], basis: result, deliver: f.deliver, web: grounding });
   const runRefine = () => { if (!refine.trim()) return; generate({ basis: result, extra: refine, web: grounding }); };
 
+  /* ★ โหมดไกด์ — สร้างผลวิเคราะห์ทีละขั้น */
+  async function genStage(stageKey, opts = {}) {
+    if (!topic.trim()) { setStageErr("ใส่หัวข้อก่อน (กลับไปขั้น ‘ตั้งค่า’)"); return; }
+    if (purposes.length === 0) { setStageErr("เลือกจุดประสงค์อย่างน้อย 1 ข้อ (ขั้น ‘ตั้งค่า’)"); return; }
+    const idx = STAGES.findIndex((s) => s.k === stageKey);
+    const st = STAGES[idx];
+    setStageLoading(stageKey); setStageErr("");
+    const secStr = allSectors().join(", ");
+    const pLabels = purposes.map((k, i) => `${i + 1}) ${PURPOSES[k].label}`).join("  ");
+    const health = sectors.includes(HEALTH);
+    if (!ranConfig) setRanConfig({ topic, sectors: secStr, purposes: purposes.map((k) => PURPOSES[k].label).join(" + "), org: ORG[org].label, user: USER[userLv].label, hasFiles: files.length, frameworks: active, provider: PROVIDERS[provider].label, model: modelName() });
+    const common = `[บริบทโจทย์]
+หัวข้อ: ${topic}
+สายงาน: ${secStr}
+จุดประสงค์: ${pLabels}
+ระดับองค์กร: ${ORG[org].label} | ระดับผู้ใช้: ${USER[userLv].label} | กรอบเวลา: ${HORIZONS[horizon].label}
+บริบทเสริม: ${context.trim() || "ไม่ระบุ"}`;
+    const prev = STAGES.slice(0, idx).map((s) => stageOut[s.k]).filter(Boolean).join("\n\n");
+    const basis = prev ? `\n[ผลขั้นก่อนหน้า — ต่อยอดให้สอดคล้อง ไม่ต้องทำซ้ำ]\n${prev.slice(-2000)}\n` : "";
+    const extraLine = opts.extra ? `\n[คำสั่งปรับแต่งจากผู้ใช้สำหรับขั้นนี้]\n${opts.extra.slice(0, 900)}\n` : "";
+    const fileNote = files.length ? "มีไฟล์แนบ — ดึงข้อมูล/ตัวเลขจากไฟล์มาใช้และอ้างอิงว่ามาจากเอกสารแนบ\n" : "";
+    const prompt = `คุณคือ "กุนซือ" เครื่องยนต์วิเคราะห์ยุทธศาสตร์ระดับมืออาชีพ ทำงานแบบทีละขั้น ขั้นนี้ให้ทำ "เฉพาะหัวข้อที่กำหนด" เท่านั้น ไม่ต้องทำขั้นอื่น ตอบเป็น Markdown ภาษาไทยเท่านั้น (ไม่มีคำนำ/คำท้ายนอกเนื้อหา) เริ่มด้วยหัวข้อ "## ขั้นที่ ${st.no}: ${st.title}"
+${common}
+${basis}${extraLine}${fileNote}เครื่องมือแนะนำสำหรับขั้นนี้: ${st.fw.join(", ")}
+
+[ภารกิจขั้นที่ ${st.no}]
+${st.spec(health, pLabels)}
+
+เขียนให้ละเอียด มีตาราง/รายการที่มีสาระจริงทุกส่วน ปรับความลึกให้เหมาะกับผู้ใช้ (${USER[userLv].label}) จบสมบูรณ์ในขั้นนี้ ตัวเลข/ข้อเท็จจริงถือเป็นค่าประมาณควรตรวจสอบล่าสุด เว้นแต่ยืนยันจากไฟล์แนบ`;
+    try {
+      const { text } = await callAI(prompt, { attachFiles: true });
+      const out = text.replace(/```(?:markdown)?/g, "").trim();
+      if (!out) throw new Error("empty");
+      setStageOut((p) => ({ ...p, [stageKey]: out }));
+    } catch (e) { setStageErr(errMsg(e)); }
+    finally { setStageLoading(""); }
+  }
+  const assembleStages = () => STAGES.map((s) => stageOut[s.k]).filter(Boolean).join("\n\n");
+  const enterOutputs = () => {
+    const asm = assembleStages();
+    if (asm) {
+      setResult(asm); setSources([]); setUsedGrounding(false); setRanSig(sig); setView("report"); setRefine("");
+      setRanConfig({ topic, sectors: allSectors().join(", "), purposes: purposes.map((k) => PURPOSES[k].label).join(" + "), org: ORG[org].label, user: USER[userLv].label, hasFiles: files.length, frameworks: active, provider: PROVIDERS[provider].label, model: modelName() });
+    }
+    setStep(6);
+  };
+  const goStep = (n) => { setStgRefine(""); setStageErr(""); if (n >= 6) enterOutputs(); else setStep(Math.max(0, n)); };
+  const startGuided = () => { if (!topic.trim() || purposes.length === 0) return; setStgRefine(""); setStageErr(""); setStep(1); };
+  const switchMode = (m) => { setMode(m); if (m === "guided") { setStep(result ? 6 : 0); } };
+
   async function genInto(setBusy, setErr, setVal, prompt, attachFiles = false, maxOut) {
     setBusy(true); setErr(""); setVal("");
     try {
@@ -551,189 +639,331 @@ Balanced Scorecard/Logic Model — ตารางตัวชี้วัดน
     </button>
   );
 
+  /* ---- บล็อกใช้ซ้ำระหว่างโหมดด่วน/ไกด์ ---- */
+  const cur = (mode === "guided" && step >= 1 && step <= 5) ? STAGES[step - 1] : null;
+  const curOut = cur ? (stageOut[cur.k] || "") : "";
+
+  const setupPanel = (
+    <section id="sec-setup" className="panel">
+      <div className="panel-head"><span className="panel-ic">🎯</span><span className="panel-title">ตั้งโจทย์</span></div>
+      <label className="field"><span className="lbl">หัวข้อ / ประเด็น</span>
+        <textarea className="ta" rows={2} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="เช่น สังคมผู้สูงอายุ" /></label>
+      <div className="field"><span className="lbl">สายงาน <em className="hint">— เลือกได้หลายค่า</em></span>
+        <div className="chips">{SECTORS.map((s) => <Chip key={s} on={sectors.includes(s)} onClick={() => toggle(sectors, setSectors, s)}>{s}</Chip>)}</div>
+        {sectors.includes(HEALTH) && <div className="lens-note">🩺 เปิดเลนส์ <b>6BB+1</b> อัตโนมัติสำหรับสายสาธารณสุข</div>}
+        {sectors.includes("อื่นๆ") && <input className="ta" style={{ marginTop: 8 }} value={customSector} onChange={(e) => setCustomSector(e.target.value)} placeholder="ระบุสายงาน เช่น การผังเมือง" />}</div>
+      <div className="field"><span className="lbl">จุดประสงค์ <em className="hint">— ตัวจัดเส้นทางหลัก · เลือกได้หลายข้อ</em></span>
+        {["A", "B", "C", "D"].map((g) => (<div key={g} className="pgroup"><div className="pgroup-lbl" style={{ color: GC[g] }}>{GROUPS[g]}</div>
+          <div className="chips">{Object.entries(PURPOSES).filter(([, v]) => v.group === g).map(([k, v]) => {
+            const idx = purposes.indexOf(k);
+            return <PChip key={k} on={idx >= 0} color={GC[g]} badge={purposes.length > 1 && idx >= 0 ? idx + 1 : null} onClick={() => togglePurpose(k)}>{v.label}</PChip>;
+          })}</div></div>))}
+      </div>
+      <div className="row2">
+        <div className="field"><span className="lbl">ระดับองค์กร {touched.org && <em className="tag-manual">ตั้งเอง</em>}</span>
+          <div className="chips">{Object.entries(ORG).map(([k, v]) => <Chip key={k} on={org === k} onClick={() => setLevel("org", k)}>{v.label}</Chip>)}</div></div>
+        <div className="field"><span className="lbl">ระดับผู้ใช้ {touched.user && <em className="tag-manual">ตั้งเอง</em>}</span>
+          <div className="chips">{Object.entries(USER).map(([k, v]) => <Chip key={k} on={userLv === k} onClick={() => setLevel("user", k)}>{v.label}</Chip>)}</div></div>
+      </div>
+      <div className="field"><span className="lbl">กรอบเวลา {touched.h && <em className="tag-manual">ตั้งเอง</em>}</span>
+        <div className="chips">{Object.entries(HORIZONS).map(([k, v]) => <Chip key={k} on={horizon === k} onClick={() => setLevel("h", k)}>{v.label}</Chip>)}</div></div>
+      <div className="field"><span className="lbl">เอกสารที่เกี่ยวข้อง <em className="hint">— PDF / รูป / ข้อความ (สูงสุด 5)</em></span>
+        <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.csv,.md" onChange={handleFiles} style={{ display: "none" }} />
+        <button type="button" className="attach-btn" onClick={() => fileRef.current && fileRef.current.click()} disabled={files.length >= 5}>＋ แนบไฟล์</button>
+        {files.length > 0 && <div className="file-list">{files.map((f) => (<span key={f.name} className="file-chip"><span className="file-kind">{f.kind}</span>{f.name}<button onClick={() => removeFile(f.name)}>×</button></span>))}</div>}</div>
+      <div className="field"><button type="button" className="ctx-toggle" onClick={() => setShowContext((s) => !s)}>{showContext ? "▾" : "▸"} บริบทเสริม (ไม่บังคับ) — งบ ข้อจำกัด เงื่อนไข</button>
+        {showContext && <textarea className="ta" rows={2} value={context} onChange={(e) => setContext(e.target.value)} placeholder="เช่น งบจำกัด 50 ล้าน / ต้องยึดแผนชาติ ฉ.3" />}</div>
+      <div className="field"><button type="button" className="ctx-toggle" onClick={() => setShowConn((s) => !s)}>{showConn ? "▾" : "▸"} 🔌 การเชื่อมต่อ AI — เริ่มต้นใช้ฟรี (Puter) · เปลี่ยนค่ายได้</button>
+        {showConn && (<div className="conn">
+          <div className="conn-sub">ผู้ให้บริการ</div>
+          <div className="chips">{Object.entries(PROVIDERS).map(([k, v]) => <Chip key={k} on={provider === k} onClick={() => pickProvider(k)}>{v.label}</Chip>)}</div>
+          {!keyless && <input type="password" className="ta" style={{ marginTop: 10 }} value={userKey} onChange={(e) => setUserKey(e.target.value)} placeholder={`API key (${PROVIDERS[provider].keyHint})`} />}
+          <input className="ta" style={{ marginTop: 8 }} list="model-sugg" value={model} onChange={(e) => setModel(e.target.value)} placeholder={`ชื่อโมเดล (เช่น ${PROVIDERS[provider].def || "ระบุเอง"})`} />
+          <datalist id="model-sugg">{PROVIDERS[provider].sugg.map((m) => <option key={m} value={m} />)}</datalist>
+          {provider === "compatible" && <input className="ta" style={{ marginTop: 8 }} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="Base URL เช่น https://api.deepseek.com" />}
+          <div className="conn-note">
+            {keyless ? "✨ ใช้ฟรี ไม่ต้องมีคีย์ — เมื่อเรียกครั้งแรกจะให้ล็อกอินบัญชี Puter (ฟรี) การใช้งานเป็นของผู้ใช้แต่ละคน ไม่ตัดโทเคนผู้พัฒนา (บริการภายนอก โปรดตรวจเงื่อนไขที่ puter.com)"
+              : <>คีย์อยู่ในเบราว์เซอร์ของคุณเท่านั้น ส่งตรงไปผู้ให้บริการ · คิดค่าใช้จ่ายกับบัญชีของคุณ{PROVIDERS[provider].free ? " · รับคีย์ฟรีที่ aistudio.google.com" : ""}{provider !== "anthropic" ? " · ค้นเว็บสดเฉพาะ Claude" : ""}</>}
+            {(userKey.trim() || keyless) && <b className="conn-on"> ● ใช้ {PROVIDERS[provider].label}</b>}
+          </div>
+          {PROVIDERS[provider].top && <div className="conn-tip">⚡ อยากได้ผลวิเคราะห์คุณภาพสูงสุด: พิมพ์ชื่อรุ่น <b>{PROVIDERS[provider].top}</b> ในช่องชื่อโมเดล{PROVIDERS[provider].keyUrl ? <> · ขอคีย์ได้ที่ <b>{PROVIDERS[provider].keyUrl}</b></> : ""}</div>}
+        </div>)}
+      </div>
+    </section>
+  );
+
+  const routingPanel = (
+    <section id="sec-route" className="panel routing">
+      <div className="panel-head panel-head-run"><span className="ph-left"><span className="panel-ic">🧭</span><span className="panel-title">เส้นทางเครื่องมือ</span></span><button type="button" className="run run-inline" onClick={runMain} disabled={loading}>{loading ? "กำลังวิเคราะห์…" : (dirty ? "▶ วิเคราะห์ใหม่" : "▶ วิเคราะห์")}</button></div>
+      <div className="route-line"><span className="route-k">โจทย์</span><span className="route-v">{topic || "—"}</span></div>
+      <div className="route-line"><span className="route-k">จุดประสงค์</span><span className="route-v hl">{purposes.length ? purposes.map((k) => PURPOSES[k].label).join(" + ") : "— เลือกอย่างน้อย 1"}</span></div>
+      <div className="route-mini"><span>{ORG[org].label}</span><i>·</i><span>{USER[userLv].label}</span><i>·</i><span>{HORIZONS[horizon].label.split(" · ")[0]}</span></div>
+      <div className="fw-head">เครื่องมือที่จะเรียกใช้ <span className="fw-count">{active.length}</span></div>
+      <div className="chips fw-chips">
+        {active.map((f) => <span key={f} className={"fw active" + (f === "6BB+1" ? " fw-special" : "")}>{f}</span>)}
+        {struck.map((f) => <span key={f} className="fw struck" title="ตัดออกเพราะกรอบเวลาสั้น">{f}</span>)}
+        {active.length === 0 && <span className="fw-empty">เลือกจุดประสงค์เพื่อดูเส้นทาง</span>}
+      </div>
+      {active.length > 0 && <button type="button" className="fw-toggle" onClick={() => setShowFwList((s) => !s)}>{showFwList ? "▾ ซ่อนเหตุผลเครื่องมือ" : "▸ เปิดดูเครื่องมือ & เหตุผล"}</button>}
+      {showFwList && (<div className="fw-list">{active.map((f) => (<div key={f} className="fw-li"><div className="fw-li-name">{f}</div><div className="fw-li-why">{fwMeta(f).why}</div><div className="fw-li-ref">อ้างอิง: {fwMeta(f).ref}</div></div>))}</div>)}
+      {struck.length > 0 && <div className="strip-note">กรอบเวลาสั้น → ตัดเครื่องมือมองอนาคตออก</div>}
+      <label className={"ground" + (canGround ? "" : " ground-off")}><input type="checkbox" checked={grounding && canGround} disabled={!canGround} onChange={(e) => setGrounding(e.target.checked)} /><span>🌐 ค้นเว็บสด (grounding) — หาตัวเลขล่าสุดพร้อมอ้างอิง <em>{canGround ? "ช้าลงเล็กน้อย" : "เฉพาะ Claude"}</em></span></label>
+      {dirty && <div className="strip-note">อินพุตเปลี่ยน — กด “▶ วิเคราะห์ใหม่” ด้านบนเพื่ออัปเดต</div>}
+      {error && <div className="err">{error}</div>}
+      <div className="run-note">เหตุผล/แหล่งอ้างอิงเครื่องมือมาจากคลังระเบียบวิธี · ตัวเลขเป็นค่าประมาณเว้นแต่ยืนยันจากไฟล์แนบ/ค้นเว็บ</div>
+    </section>
+  );
+
+  const followPanel = result ? (
+    <section className="panel">
+      <div className="panel-head"><span className="panel-ic">🔗</span><span className="panel-title">ต่อยอด &amp; ปรับแต่ง</span></div>
+      <div className="side-sec0">
+        <div className="side-lbl">ต่อยอดผลนี้ให้เป็นผลงานพร้อมใช้</div>
+        <div className="chips">{FOLLOW.map((f) => (<button key={f.key} className="follow-btn" disabled={loading} onClick={() => runFollow(f)} title={f.deliver}>{f.label}</button>))}</div>
+      </div>
+      <div className="side-sec">
+        <div className="side-lbl">ปรับแต่ง / เพิ่มข้อมูล แล้วประมวลผลใหม่</div>
+        <textarea className="ta" rows={3} value={refine} onChange={(e) => setRefine(e.target.value)} placeholder="พิมพ์ข้อมูลเพิ่มเติมหรือทิศทางที่ต้องการ เช่น 'เพิ่มมิติกำลังคน อสม.'" />
+        <button className="refine-btn" disabled={loading || !refine.trim()} onClick={runRefine}>↻ ประมวลผลใหม่พร้อมข้อมูลนี้</button>
+      </div>
+    </section>
+  ) : null;
+
+  const reportInner = (<>
+    {!loading && !result && (<div className="empty"><span className="em-ic">🧭</span>ยังไม่มีผลวิเคราะห์<br />ตั้งโจทย์ทางซ้าย แล้วกดปุ่ม “▶ วิเคราะห์”</div>)}
+
+    {loading && !result && (<div className="skeleton">
+      <div className="sk-line w60" /><div className="sk-line w90" /><div className="sk-line w80" /><div className="sk-line w70" />
+      <div className="sk-pulse">กุนซือกำลังรันเครื่องมือ {active.length} ตัว{files.length ? ` · อ่านไฟล์ ${files.length}` : ""}{grounding && canGround ? " · ค้นเว็บ" : ""}…</div></div>)}
+
+    {result && (<>
+      <div className="statstrip">
+        <div className="statcard"><span className="stat-ic si-b">🧰</span><div><div className="stat-lbl">เครื่องมือที่ใช้</div><div className="stat-val">{usedFw.length}</div></div></div>
+        <div className="statcard"><span className="stat-ic si-g">📑</span><div><div className="stat-lbl">มุมมองผลลัพธ์</div><div className="stat-val">{TABS.length}</div></div></div>
+        <div className="statcard"><span className="stat-ic si-b">🤖</span><div><div className="stat-lbl">ค่าย AI</div><div className="stat-val sm">{(ranConfig && ranConfig.provider) || "-"}</div></div></div>
+        <div className="statcard"><span className="stat-ic si-g">✓</span><div><div className="stat-lbl">สถานะ</div><div className="stat-val sm">{usedGrounding ? "ค้นเว็บสด" : "วิเคราะห์แล้ว"}</div></div></div>
+      </div>
+      <div className="tabbar">{TABS.map((t) => (
+        <button key={t.k} className={"tab" + (view === t.k ? " tab-on" : "")} onClick={() => goTab(t.k)}><span className="tab-ic">{t.ic}</span>{t.label}</button>
+      ))}</div>
+      <div className="report-head">
+        {ranConfig && (<div className="out-config-row">
+          <span className="oc">{ranConfig.topic}</span><i>·</i><span>{ranConfig.sectors}</span><i>·</i><span>{ranConfig.purposes}</span><i>·</i><span>{ranConfig.org}</span><i>·</i><span>{ranConfig.user}</span>
+          {ranConfig.hasFiles > 0 && <><i>·</i><span className="oc">📎 {ranConfig.hasFiles}</span></>}
+          {usedGrounding && <><i>·</i><span className="oc">🌐 ค้นเว็บ</span></>}
+          <i>·</i><span className="oc">{ranConfig.provider}</span>
+        </div>)}
+        <div className="report-bar">
+          <button className="mini-btn" onClick={copyReport}>{copied ? "✓ คัดลอกแล้ว" : "⧉ คัดลอกหน้านี้"}</button>
+          <button className="mini-btn primary" onClick={exportDoc}>⬇ ดาวน์โหลดหน้านี้ (Word)</button>
+        </div>
+      </div>
+      {ranConfig && <div className="disclaimer">⚠ ผลนี้วิเคราะห์โดย AI ({ranConfig.provider}{ranConfig.model ? " · " + ranConfig.model : ""}) เป็นข้อมูลประกอบการตัดสินใจเบื้องต้น — ผู้ใช้ควรตรวจสอบความถูกต้องอีกครั้งก่อนนำไปใช้</div>}
+
+      {view === "report" && (<>
+        <Markdown text={result} />
+        {sources.length > 0 && (<div className="src"><div className="src-lbl">🌐 แหล่งข้อมูลค้นเว็บสด</div>
+          <ol>{sources.map((s, i) => <li key={i}><a href={s.url} target="_blank" rel="noreferrer">{s.title}</a></li>)}</ol></div>)}
+      </>)}
+
+      {view === "onepager" && (<div className="pane">
+        {opLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังสรุปเป็นบทสรุป 1 หน้า…</div>}
+        {opErr && <div className="err">{opErr} <button className="mini-btn" onClick={makeOnepager}>ลองใหม่</button></div>}
+        {onepager && !opLoading && <Markdown text={onepager} />}</div>)}
+
+      {view === "prep" && (<div className="pane">
+        {prepLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังจัดทำแนวทางเตรียมความพร้อม…</div>}
+        {prepErr && <div className="err">{prepErr} <button className="mini-btn" onClick={makePrep}>ลองใหม่</button></div>}
+        {prep && !prepLoading && <Markdown text={prep} />}</div>)}
+
+      {view === "extra" && (<div className="pane">
+        <div className="extra-buttons">{Object.entries(EXTRAS).map(([k, v]) => (
+          <button key={k} className={"ex-btn" + (extraKey === k ? " on" : "")} disabled={extraLoading} onClick={() => runExtra(k)}>{v.label}</button>))}</div>
+        {extraLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังสร้าง {EXTRAS[extraKey]?.label}…</div>}
+        {extraErr && <div className="err">{extraErr} <button className="mini-btn" onClick={() => runExtra(extraKey)}>ลองใหม่</button></div>}
+        {extra && !extraLoading && <Markdown text={extra} />}
+        {!extra && !extraLoading && !extraErr && <p className="extra-hint">เลือกรูปแบบผลลัพธ์ที่ต้องการด้านบน กุนซือจะแปลงจากผลวิเคราะห์ให้</p>}
+      </div>)}
+
+      {view === "tools" && (<div className="pane">
+        <p className="tools-intro">เครื่องมือ {usedFw.length} ตัวที่กุนซือเลือกใช้กับโจทย์นี้ พร้อมเหตุผลและแหล่งอ้างอิงระเบียบวิธีต้นฉบับ</p>
+        {usedFw.map((f) => (<div key={f} className="tool-row"><div className="tool-name">{f}</div><div className="tool-why">{fwMeta(f).why}</div><div className="tool-ref">อ้างอิง: {fwMeta(f).ref}</div></div>))}</div>)}
+
+      {view === "mindmap" && (<div className="pane">
+        {mmLoading && <div className="sk-pulse" style={{ padding: "20px 0" }}>กำลังสรุปเป็นมายด์แมพ…</div>}
+        {mmError && <div className="err">{mmError} <button className="mini-btn" onClick={makeMindmap}>ลองใหม่</button></div>}
+        {mindmap && !mmLoading && (<><MindMap data={mindmap} /><button className="mini-btn" onClick={makeMindmap} style={{ marginTop: 14 }}>↻ สร้างมายด์แมพใหม่</button></>)}</div>)}
+    </>)}
+  </>);
+
+  const modeSwitch = (
+    <div className="modebar">
+      <button type="button" className={"modebtn" + (mode === "quick" ? " on" : "")} onClick={() => switchMode("quick")}>
+        <span className="mb-ic">⚡</span><span className="mb-txt"><b>โหมดด่วน</b><em>วิเคราะห์ครบในคลิกเดียว</em></span></button>
+      <button type="button" className={"modebtn" + (mode === "guided" ? " on" : "")} onClick={() => switchMode("guided")}>
+        <span className="mb-ic">🧭</span><span className="mb-txt"><b>โหมดไกด์ทีละขั้น</b><em>เดินทีละขั้น ตรวจก่อนไปต่อ</em></span></button>
+    </div>
+  );
+
+  const stepper = (
+    <div className="stepper">
+      {GSTEPS.map((s, i) => {
+        const done = i < step, now = i === step;
+        return (<React.Fragment key={i}>
+          <button type="button" className={"snode" + (now ? " cur" : "") + (done ? " done" : "")} onClick={() => goStep(i)}>
+            <span className="sdot">{done ? "✓" : s.ic}</span><span className="slabel">{s.label}</span>
+          </button>
+          {i < GSTEPS.length - 1 && <span className={"sline" + (done ? " done" : "")} />}
+        </React.Fragment>);
+      })}
+    </div>
+  );
+
+  const guideIntro = (
+    <div className="guide-intro">
+      <h2 className="gi-title">🧭 โหมดไกด์ · วางยุทธศาสตร์ทีละขั้น</h2>
+      <p className="gi-sub">กุนซือจะพาคุณเดิน 5 ขั้น ตั้งแต่มองภาพใหญ่จนถึงตัวชี้วัด แต่ละขั้นสร้างให้ตรวจและปรับก่อนไปต่อ แล้วรวมเป็นรายงานฉบับเต็มในขั้นสุดท้าย</p>
+      <ol className="gi-steps">
+        {STAGES.map((s) => (<li key={s.k}><span className="gi-ic">{s.ic}</span><div className="gi-txt"><b>ขั้น {s.no}: {s.title}</b><span>{s.desc}</span></div></li>))}
+      </ol>
+      <button type="button" className="run" onClick={startGuided} disabled={!topic.trim() || purposes.length === 0}>เริ่มทีละขั้น →</button>
+      {(!topic.trim() || purposes.length === 0) && <div className="strip-note" style={{ marginTop: 10 }}>กรอกหัวข้อและเลือกจุดประสงค์อย่างน้อย 1 ข้อทางซ้ายก่อน</div>}
+    </div>
+  );
+
+  const guidedSidebar = (
+    <section className="panel">
+      <div className="panel-head"><span className="panel-ic">🎯</span><span className="panel-title">สรุปโจทย์</span></div>
+      <div className="route-line"><span className="route-k">หัวข้อ</span><span className="route-v">{topic || "—"}</span></div>
+      <div className="route-line"><span className="route-k">สายงาน</span><span className="route-v">{allSectors().join(", ") || "—"}</span></div>
+      <div className="route-line"><span className="route-k">จุดประสงค์</span><span className="route-v hl">{purposes.length ? purposes.map((k) => PURPOSES[k].label).join(" + ") : "—"}</span></div>
+      <div className="route-mini"><span>{ORG[org].label}</span><i>·</i><span>{USER[userLv].label}</span><i>·</i><span>{HORIZONS[horizon].label.split(" · ")[0]}</span></div>
+      {files.length > 0 && <div className="route-mini"><span className="oc" style={{ color: "var(--brand2)" }}>📎 แนบ {files.length} ไฟล์</span></div>}
+      <div className="gstage-list">
+        {STAGES.map((s) => (<div key={s.k} className={"gstage-li" + (stageOut[s.k] ? " ok" : "") + (cur && cur.k === s.k ? " now" : "")} onClick={() => goStep(s.no)}>
+          <span className="gstage-ic">{stageOut[s.k] ? "✓" : s.ic}</span><span className="gstage-name">ขั้น {s.no}: {s.short}</span></div>))}
+      </div>
+      <button type="button" className="mini-btn" style={{ marginTop: 14, width: "100%" }} onClick={() => setStep(0)}>✎ แก้โจทย์ / ตั้งค่า</button>
+      <button type="button" className="refine-btn" style={{ marginTop: 10, width: "100%" }} onClick={() => goStep(6)}>📤 รวมผล & ออกรายงาน</button>
+    </section>
+  );
+
+  const stageArea = cur ? (
+    <div className="stage-wrap">
+      <div className="stage-head">
+        <span className="stage-no">{cur.no}</span>
+        <div><div className="stage-title">{cur.title}</div><div className="stage-desc">{cur.desc}</div></div>
+      </div>
+      <div className="stage-fw chips">{cur.fw.map((f) => <span key={f} className={"fw active" + (f === "6BB+1" ? " fw-special" : "")}>{f}</span>)}</div>
+      {!curOut && stageLoading !== cur.k && !stageErr && (<div className="stage-cta">
+        <button type="button" className="run" onClick={() => genStage(cur.k)}>✨ สร้างขั้นนี้</button>
+        <p className="extra-hint">กุนซือจะวิเคราะห์เฉพาะขั้นนี้ ต่อยอดจากขั้นก่อนหน้าให้สอดคล้อง</p></div>)}
+      {stageLoading === cur.k && (<div className="skeleton"><div className="sk-line w60" /><div className="sk-line w90" /><div className="sk-line w80" />
+        <div className="sk-pulse">กำลังวิเคราะห์ขั้น “{cur.short}”…{files.length ? ` · อ่านไฟล์ ${files.length}` : ""}</div></div>)}
+      {stageErr && stageLoading !== cur.k && <div className="err">{stageErr} <button className="mini-btn" onClick={() => genStage(cur.k)}>ลองใหม่</button></div>}
+      {curOut && stageLoading !== cur.k && (<>
+        <Markdown text={curOut} />
+        <div className="stage-refine">
+          <textarea className="ta" rows={2} value={stgRefine} onChange={(e) => setStgRefine(e.target.value)} placeholder="อยากปรับขั้นนี้อย่างไร เช่น เพิ่มมิติกำลังคน / เน้นงบจำกัด (เว้นว่างได้)" />
+          <button type="button" className="mini-btn" onClick={() => genStage(cur.k, { extra: stgRefine })} disabled={stageLoading === cur.k}>↻ สร้างขั้นนี้ใหม่{stgRefine.trim() ? " ตามที่ปรับ" : ""}</button>
+        </div>
+      </>)}
+      <div className="stage-nav">
+        <button type="button" className="nav-btn" onClick={() => goStep(step - 1)}>← ย้อน</button>
+        <span className="stage-count">ขั้น {cur.no} / 5</span>
+        <button type="button" className="nav-btn primary" onClick={() => goStep(step + 1)} disabled={!curOut}>{step === 5 ? "รวมผล & ออกรายงาน →" : "ถัดไป →"}</button>
+      </div>
+    </div>
+  ) : null;
+
+  /* ---- app shell ---- */
+  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+  const jump = (k) => {
+    setActiveNav(k); setNavOpen(false);
+    if (k === "about") setShowHow(true);
+    if (typeof document !== "undefined") { const el = document.getElementById("sec-" + k); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  };
+  const gStageDone = STAGES.filter((s) => stageOut[s.k]).length;
+  const gaugePct = mode === "guided" ? Math.round((gStageDone / 5) * 100) : (result ? 100 : (loading ? 50 : 8));
+  const gaugeMain = mode === "guided" ? `${gStageDone}/5` : (result ? "100%" : (loading ? "…" : "พร้อม"));
+  const gaugeSub = mode === "guided" ? "ขั้นที่เสร็จ" : (result ? "วิเคราะห์แล้ว" : "สถานะระบบ");
+  const GAUGE_R = 34, GAUGE_C = 2 * Math.PI * GAUGE_R;
+  const gauge = (
+    <div className="gauge-card">
+      <svg width="96" height="96" viewBox="0 0 96 96" className="gauge-svg">
+        <circle cx="48" cy="48" r={GAUGE_R} className="gauge-track" />
+        <circle cx="48" cy="48" r={GAUGE_R} className="gauge-fill" strokeDasharray={GAUGE_C} strokeDashoffset={GAUGE_C * (1 - gaugePct / 100)} transform="rotate(-90 48 48)" />
+      </svg>
+      <div className="gauge-center"><div className="gauge-main">{gaugeMain}</div><div className="gauge-sub">{gaugeSub}</div></div>
+    </div>
+  );
+  const modeSwitchTop = (
+    <div className="modeseg">
+      <button type="button" className={"mseg" + (mode === "quick" ? " on" : "")} onClick={() => switchMode("quick")}>⚡ ด่วน</button>
+      <button type="button" className={"mseg" + (mode === "guided" ? " on" : "")} onClick={() => switchMode("guided")}>🧭 ไกด์</button>
+    </div>
+  );
+  const aboutCard = (
+    <section id="sec-about" className="panel about-card">
+      <div className="about-head"><span className="panel-ic">💡</span><div><div className="panel-title">{NAME} · Gunsue Strategic Advisor</div><div className="about-tag">ระบบสนับสนุนการวางแผนเชิงยุทธศาสตร์ด้วย AI · โทนกระทรวงสาธารณสุข</div></div></div>
+      <p className="about-def">ประยุกต์ปัญญาประดิษฐ์เข้ากับกรอบทฤษฎีการบริหารยุทธศาสตร์ ช่วยวิเคราะห์ตั้งแต่ประเมินสถานการณ์ กำหนดทางเลือก จัดทำแผนงาน จนถึงติดตามประเมินผล อ้างอิงระเบียบวิธีมาตรฐานสากล เพื่อสนับสนุนการตัดสินใจทุกระดับ</p>
+      <button type="button" className="how-toggle" onClick={() => setShowHow((s) => !s)}>{showHow ? "▾ ซ่อนหลักการทำงาน" : "▸ หลักการทำงานของกุนซือ"}</button>
+      {showHow && (<div className="how">
+        <span className="how-step"><b>1 Framing</b> แปลงหัวข้อเป็นคำถามยุทธศาสตร์</span>
+        <span className="how-step"><b>2 Routing</b> จุดประสงค์เลือกชุดเครื่องมือ</span>
+        <span className="how-step"><b>3 Grounding</b> ไฟล์แนบ + ค้นเว็บ + บริบท</span>
+        <span className="how-step"><b>4 Analysis</b> รันเครื่องมือตามลำดับตรรกะ</span>
+        <span className="how-step"><b>5 Output</b> หลายรูปแบบ + ต่อยอด + ส่งออก</span>
+      </div>)}
+      <div className="about-dev">พัฒนาโดย <b>{DEV.name}</b> · {DEV.role} · {DEV.unit} {DEV.org}</div>
+    </section>
+  );
+
   return (
     <div className={"root " + theme}>
       <style>{CSS}</style>
-      <header className="head">
-        <div className="banner">
-          <div className="banner-left">
-            <span className="logo">ก</span>
-            <div>
-              <div className="banner-org">เครื่องยนต์บริหารยุทธศาสตร์อัจฉริยะ · v{VERSION}</div>
-              <div className="banner-title">{NAME} <span className="banner-title-en">Gunsue · Strategic Advisor</span></div>
-            </div>
+      <div className={"shell" + (navOpen ? " nav-open" : "")}>
+        <nav className="navbar">
+          <div className="brand"><span className="logo">ก</span><div className="brand-txt"><div className="brand-name">{NAME}</div><div className="brand-ver">Strategic Advisor · v{VERSION}</div></div></div>
+          <div className="navlist">
+            {NAV.map((n) => <button key={n.k} type="button" className={"navitem" + (activeNav === n.k ? " on" : "")} onClick={() => jump(n.k)}><span className="navic">{n.ic}</span><span>{n.label}</span></button>)}
           </div>
-          <button className="theme-btn banner-theme" onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}>{theme === "dark" ? "☀ สว่าง" : "🌙 มืด"}</button>
+          {gauge}
+          <div className="nav-foot">
+            <button type="button" className="navtheme" onClick={toggleTheme}>{theme === "dark" ? "☀ โหมดสว่าง" : "🌙 โหมดมืด"}</button>
+            <div className="nav-dev"><b>{DEV.name}</b><span>{DEV.unit}</span></div>
+          </div>
+        </nav>
+        <div className="nav-scrim" onClick={() => setNavOpen(false)} />
+        <div className="main-col">
+          <header className="topbar">
+            <button type="button" className="burger" onClick={() => setNavOpen((o) => !o)}>☰</button>
+            <div className="topbar-title">{(NAV.find((n) => n.k === activeNav) || NAV[0]).label}</div>
+            <div className="topbar-right">{modeSwitchTop}</div>
+          </header>
+          {mode === "guided" && <div className="content-stepper">{stepper}</div>}
+          <div className="content">
+            {aboutCard}
+            {mode === "quick" ? (<div className="app">
+              <aside className="sidebar">{setupPanel}{routingPanel}{followPanel}</aside>
+              <main id="sec-result" className="report-area">{reportInner}</main>
+            </div>) : step === 0 ? (<div className="app">
+              <aside className="sidebar">{setupPanel}</aside>
+              <main className="report-area">{guideIntro}</main>
+            </div>) : (step >= 1 && step <= 5) ? (<div className="app">
+              <aside className="sidebar">{guidedSidebar}</aside>
+              <main className="report-area">{stageArea}</main>
+            </div>) : (<div className="app">
+              <aside className="sidebar">{guidedSidebar}{followPanel}</aside>
+              <main id="sec-result" className="report-area">{reportInner}</main>
+            </div>)}
+          </div>
+          <footer className="foot">
+            <div>{NAME} · {NAME_EN} v{VERSION}</div>
+            <div>พัฒนาโดย {DEV.name} · {DEV.role} · {DEV.unit} {DEV.org}</div>
+          </footer>
         </div>
-        <p className="sub"><b>กุนซือ (Gunsue)</b> เป็นระบบสนับสนุนการวางแผนเชิงยุทธศาสตร์ที่ประยุกต์ปัญญาประดิษฐ์เข้ากับกรอบทฤษฎีการบริหารยุทธศาสตร์ ช่วยวิเคราะห์ประเด็นตั้งแต่การประเมินสถานการณ์ การกำหนดทางเลือก การจัดทำแผนงาน จนถึงการติดตามประเมินผล โดยอ้างอิงระเบียบวิธีที่เป็นมาตรฐานสากล เพื่อสนับสนุนการตัดสินใจของผู้บริหารและผู้ปฏิบัติงานในทุกระดับ</p>
-        <div className="dev">พัฒนาโดย <b>{DEV.name}</b> · {DEV.role} · {DEV.unit} {DEV.org}</div>
-        <button className="how-toggle" onClick={() => setShowHow((s) => !s)}>{showHow ? "▾" : "▸"} หลักการทำงานของกุนซือ</button>
-        {showHow && (<div className="how">
-          <span className="how-step"><b>1 Framing</b> แปลงหัวข้อเป็นคำถามยุทธศาสตร์</span>
-          <span className="how-step"><b>2 Routing</b> จุดประสงค์เลือกชุดเครื่องมือ</span>
-          <span className="how-step"><b>3 Grounding</b> ไฟล์แนบ + ค้นเว็บ + บริบท</span>
-          <span className="how-step"><b>4 Analysis</b> รันเครื่องมือตามลำดับตรรกะ</span>
-          <span className="how-step"><b>5 Output</b> หลายรูปแบบ + ต่อยอด + ส่งออก</span>
-        </div>)}
-      </header>
-
-      <div className="app">
-       <aside className="sidebar">
-        <section className="panel">
-          <div className="panel-head"><span className="panel-ic">🎯</span><span className="panel-title">ตั้งโจทย์</span></div>
-          <label className="field"><span className="lbl">หัวข้อ / ประเด็น</span>
-            <textarea className="ta" rows={2} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="เช่น สังคมผู้สูงอายุ" /></label>
-          <div className="field"><span className="lbl">สายงาน <em className="hint">— เลือกได้หลายค่า</em></span>
-            <div className="chips">{SECTORS.map((s) => <Chip key={s} on={sectors.includes(s)} onClick={() => toggle(sectors, setSectors, s)}>{s}</Chip>)}</div>
-            {sectors.includes(HEALTH) && <div className="lens-note">🩺 เปิดเลนส์ <b>6BB+1</b> อัตโนมัติสำหรับสายสาธารณสุข</div>}
-            {sectors.includes("อื่นๆ") && <input className="ta" style={{ marginTop: 8 }} value={customSector} onChange={(e) => setCustomSector(e.target.value)} placeholder="ระบุสายงาน เช่น การผังเมือง" />}</div>
-          <div className="field"><span className="lbl">จุดประสงค์ <em className="hint">— ตัวจัดเส้นทางหลัก · เลือกได้หลายข้อ</em></span>
-            {["A", "B", "C", "D"].map((g) => (<div key={g} className="pgroup"><div className="pgroup-lbl" style={{ color: GC[g] }}>{GROUPS[g]}</div>
-              <div className="chips">{Object.entries(PURPOSES).filter(([, v]) => v.group === g).map(([k, v]) => {
-                const idx = purposes.indexOf(k);
-                return <PChip key={k} on={idx >= 0} color={GC[g]} badge={purposes.length > 1 && idx >= 0 ? idx + 1 : null} onClick={() => togglePurpose(k)}>{v.label}</PChip>;
-              })}</div></div>))}
-          </div>
-          <div className="row2">
-            <div className="field"><span className="lbl">ระดับองค์กร {touched.org && <em className="tag-manual">ตั้งเอง</em>}</span>
-              <div className="chips">{Object.entries(ORG).map(([k, v]) => <Chip key={k} on={org === k} onClick={() => setLevel("org", k)}>{v.label}</Chip>)}</div></div>
-            <div className="field"><span className="lbl">ระดับผู้ใช้ {touched.user && <em className="tag-manual">ตั้งเอง</em>}</span>
-              <div className="chips">{Object.entries(USER).map(([k, v]) => <Chip key={k} on={userLv === k} onClick={() => setLevel("user", k)}>{v.label}</Chip>)}</div></div>
-          </div>
-          <div className="field"><span className="lbl">กรอบเวลา {touched.h && <em className="tag-manual">ตั้งเอง</em>}</span>
-            <div className="chips">{Object.entries(HORIZONS).map(([k, v]) => <Chip key={k} on={horizon === k} onClick={() => setLevel("h", k)}>{v.label}</Chip>)}</div></div>
-          <div className="field"><span className="lbl">เอกสารที่เกี่ยวข้อง <em className="hint">— PDF / รูป / ข้อความ (สูงสุด 5)</em></span>
-            <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.csv,.md" onChange={handleFiles} style={{ display: "none" }} />
-            <button type="button" className="attach-btn" onClick={() => fileRef.current && fileRef.current.click()} disabled={files.length >= 5}>＋ แนบไฟล์</button>
-            {files.length > 0 && <div className="file-list">{files.map((f) => (<span key={f.name} className="file-chip"><span className="file-kind">{f.kind}</span>{f.name}<button onClick={() => removeFile(f.name)}>×</button></span>))}</div>}</div>
-          <div className="field"><button type="button" className="ctx-toggle" onClick={() => setShowContext((s) => !s)}>{showContext ? "▾" : "▸"} บริบทเสริม (ไม่บังคับ) — งบ ข้อจำกัด เงื่อนไข</button>
-            {showContext && <textarea className="ta" rows={2} value={context} onChange={(e) => setContext(e.target.value)} placeholder="เช่น งบจำกัด 50 ล้าน / ต้องยึดแผนชาติ ฉ.3" />}</div>
-          <div className="field"><button type="button" className="ctx-toggle" onClick={() => setShowConn((s) => !s)}>{showConn ? "▾" : "▸"} 🔌 การเชื่อมต่อ AI — เริ่มต้นใช้ฟรี (Puter) · เปลี่ยนค่ายได้</button>
-            {showConn && (<div className="conn">
-              <div className="conn-sub">ผู้ให้บริการ</div>
-              <div className="chips">{Object.entries(PROVIDERS).map(([k, v]) => <Chip key={k} on={provider === k} onClick={() => pickProvider(k)}>{v.label}</Chip>)}</div>
-              {!keyless && <input type="password" className="ta" style={{ marginTop: 10 }} value={userKey} onChange={(e) => setUserKey(e.target.value)} placeholder={`API key (${PROVIDERS[provider].keyHint})`} />}
-              <input className="ta" style={{ marginTop: 8 }} list="model-sugg" value={model} onChange={(e) => setModel(e.target.value)} placeholder={`ชื่อโมเดล (เช่น ${PROVIDERS[provider].def || "ระบุเอง"})`} />
-              <datalist id="model-sugg">{PROVIDERS[provider].sugg.map((m) => <option key={m} value={m} />)}</datalist>
-              {provider === "compatible" && <input className="ta" style={{ marginTop: 8 }} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="Base URL เช่น https://api.deepseek.com" />}
-              <div className="conn-note">
-                {keyless ? "✨ ใช้ฟรี ไม่ต้องมีคีย์ — เมื่อเรียกครั้งแรกจะให้ล็อกอินบัญชี Puter (ฟรี) การใช้งานเป็นของผู้ใช้แต่ละคน ไม่ตัดโทเคนผู้พัฒนา (บริการภายนอก โปรดตรวจเงื่อนไขที่ puter.com)"
-                  : <>คีย์อยู่ในเบราว์เซอร์ของคุณเท่านั้น ส่งตรงไปผู้ให้บริการ · คิดค่าใช้จ่ายกับบัญชีของคุณ{PROVIDERS[provider].free ? " · รับคีย์ฟรีที่ aistudio.google.com" : ""}{provider !== "anthropic" ? " · ค้นเว็บสดเฉพาะ Claude" : ""}</>}
-                {(userKey.trim() || keyless) && <b className="conn-on"> ● ใช้ {PROVIDERS[provider].label}</b>}
-              </div>
-              {PROVIDERS[provider].top && <div className="conn-tip">⚡ อยากได้ผลวิเคราะห์คุณภาพสูงสุด: พิมพ์ชื่อรุ่น <b>{PROVIDERS[provider].top}</b> ในช่องชื่อโมเดล{PROVIDERS[provider].keyUrl ? <> · ขอคีย์ได้ที่ <b>{PROVIDERS[provider].keyUrl}</b></> : ""}</div>}
-            </div>)}
-          </div>
-        </section>
-
-        <section className="panel routing">
-          <div className="panel-head panel-head-run"><span className="ph-left"><span className="panel-ic">🧭</span><span className="panel-title">เส้นทางเครื่องมือ</span></span><button type="button" className="run run-inline" onClick={runMain} disabled={loading}>{loading ? "กำลังวิเคราะห์…" : (dirty ? "▶ วิเคราะห์ใหม่" : "▶ วิเคราะห์")}</button></div>
-          <div className="route-line"><span className="route-k">โจทย์</span><span className="route-v">{topic || "—"}</span></div>
-          <div className="route-line"><span className="route-k">จุดประสงค์</span><span className="route-v hl">{purposes.length ? purposes.map((k) => PURPOSES[k].label).join(" + ") : "— เลือกอย่างน้อย 1"}</span></div>
-          <div className="route-mini"><span>{ORG[org].label}</span><i>·</i><span>{USER[userLv].label}</span><i>·</i><span>{HORIZONS[horizon].label.split(" · ")[0]}</span></div>
-          <div className="fw-head">เครื่องมือที่จะเรียกใช้ <span className="fw-count">{active.length}</span></div>
-          <div className="chips fw-chips">
-            {active.map((f) => <span key={f} className={"fw active" + (f === "6BB+1" ? " fw-special" : "")}>{f}</span>)}
-            {struck.map((f) => <span key={f} className="fw struck" title="ตัดออกเพราะกรอบเวลาสั้น">{f}</span>)}
-            {active.length === 0 && <span className="fw-empty">เลือกจุดประสงค์เพื่อดูเส้นทาง</span>}
-          </div>
-          {active.length > 0 && <button type="button" className="fw-toggle" onClick={() => setShowFwList((s) => !s)}>{showFwList ? "▾ ซ่อนเหตุผลเครื่องมือ" : "▸ เปิดดูเครื่องมือ & เหตุผล"}</button>}
-          {showFwList && (<div className="fw-list">{active.map((f) => (<div key={f} className="fw-li"><div className="fw-li-name">{f}</div><div className="fw-li-why">{fwMeta(f).why}</div><div className="fw-li-ref">อ้างอิง: {fwMeta(f).ref}</div></div>))}</div>)}
-          {struck.length > 0 && <div className="strip-note">กรอบเวลาสั้น → ตัดเครื่องมือมองอนาคตออก</div>}
-          <label className={"ground" + (canGround ? "" : " ground-off")}><input type="checkbox" checked={grounding && canGround} disabled={!canGround} onChange={(e) => setGrounding(e.target.checked)} /><span>🌐 ค้นเว็บสด (grounding) — หาตัวเลขล่าสุดพร้อมอ้างอิง <em>{canGround ? "ช้าลงเล็กน้อย" : "เฉพาะ Claude"}</em></span></label>
-          {dirty && <div className="strip-note">อินพุตเปลี่ยน — กด “▶ วิเคราะห์ใหม่” ด้านบนเพื่ออัปเดต</div>}
-          {error && <div className="err">{error}</div>}
-          <div className="run-note">เหตุผล/แหล่งอ้างอิงเครื่องมือมาจากคลังระเบียบวิธี · ตัวเลขเป็นค่าประมาณเว้นแต่ยืนยันจากไฟล์แนบ/ค้นเว็บ</div>
-        </section>
-
-        {result && (
-        <section className="panel">
-          <div className="panel-head"><span className="panel-ic">🔗</span><span className="panel-title">ต่อยอด &amp; ปรับแต่ง</span></div>
-          <div className="side-sec0">
-            <div className="side-lbl">ต่อยอดผลนี้ให้เป็นผลงานพร้อมใช้</div>
-            <div className="chips">{FOLLOW.map((f) => (<button key={f.key} className="follow-btn" disabled={loading} onClick={() => runFollow(f)} title={f.deliver}>{f.label}</button>))}</div>
-          </div>
-          <div className="side-sec">
-            <div className="side-lbl">ปรับแต่ง / เพิ่มข้อมูล แล้วประมวลผลใหม่</div>
-            <textarea className="ta" rows={3} value={refine} onChange={(e) => setRefine(e.target.value)} placeholder="พิมพ์ข้อมูลเพิ่มเติมหรือทิศทางที่ต้องการ เช่น 'เพิ่มมิติกำลังคน อสม.'" />
-            <button className="refine-btn" disabled={loading || !refine.trim()} onClick={runRefine}>↻ ประมวลผลใหม่พร้อมข้อมูลนี้</button>
-          </div>
-        </section>
-        )}
-       </aside>
-
-       <main className="report-area">
-          {!loading && !result && (<div className="empty"><span className="em-ic">🧭</span>ยังไม่มีผลวิเคราะห์<br />ตั้งโจทย์ทางซ้าย แล้วกดปุ่ม “ให้กุนซือวิเคราะห์”</div>)}
-
-          {loading && !result && (<div className="skeleton">
-            <div className="sk-line w60" /><div className="sk-line w90" /><div className="sk-line w80" /><div className="sk-line w70" />
-            <div className="sk-pulse">กุนซือกำลังรันเครื่องมือ {active.length} ตัว{files.length ? ` · อ่านไฟล์ ${files.length}` : ""}{grounding && canGround ? " · ค้นเว็บ" : ""}…</div></div>)}
-
-          {result && (<>
-            <div className="statstrip">
-              <div className="statcard"><span className="stat-ic si-b">🧰</span><div><div className="stat-lbl">เครื่องมือที่ใช้</div><div className="stat-val">{usedFw.length}</div></div></div>
-              <div className="statcard"><span className="stat-ic si-g">📑</span><div><div className="stat-lbl">มุมมองผลลัพธ์</div><div className="stat-val">{TABS.length}</div></div></div>
-              <div className="statcard"><span className="stat-ic si-b">🤖</span><div><div className="stat-lbl">ค่าย AI</div><div className="stat-val sm">{(ranConfig && ranConfig.provider) || "-"}</div></div></div>
-              <div className="statcard"><span className="stat-ic si-g">✓</span><div><div className="stat-lbl">สถานะ</div><div className="stat-val sm">{usedGrounding ? "ค้นเว็บสด" : "วิเคราะห์แล้ว"}</div></div></div>
-            </div>
-            <div className="tabbar">{TABS.map((t) => (
-              <button key={t.k} className={"tab" + (view === t.k ? " tab-on" : "")} onClick={() => goTab(t.k)}><span className="tab-ic">{t.ic}</span>{t.label}</button>
-            ))}</div>
-            <div className="report-head">
-              {ranConfig && (<div className="out-config-row">
-                <span className="oc">{ranConfig.topic}</span><i>·</i><span>{ranConfig.sectors}</span><i>·</i><span>{ranConfig.purposes}</span><i>·</i><span>{ranConfig.org}</span><i>·</i><span>{ranConfig.user}</span>
-                {ranConfig.hasFiles > 0 && <><i>·</i><span className="oc">📎 {ranConfig.hasFiles}</span></>}
-                {usedGrounding && <><i>·</i><span className="oc">🌐 ค้นเว็บ</span></>}
-                <i>·</i><span className="oc">{ranConfig.provider}</span>
-              </div>)}
-              <div className="report-bar">
-                <button className="mini-btn" onClick={copyReport}>{copied ? "✓ คัดลอกแล้ว" : "⧉ คัดลอกหน้านี้"}</button>
-                <button className="mini-btn primary" onClick={exportDoc}>⬇ ดาวน์โหลดหน้านี้ (Word)</button>
-              </div>
-            </div>
-            {ranConfig && <div className="disclaimer">⚠ ผลนี้วิเคราะห์โดย AI ({ranConfig.provider}{ranConfig.model ? " · " + ranConfig.model : ""}) เป็นข้อมูลประกอบการตัดสินใจเบื้องต้น — ผู้ใช้ควรตรวจสอบความถูกต้องอีกครั้งก่อนนำไปใช้</div>}
-
-            {view === "report" && (<>
-              <Markdown text={result} />
-              {sources.length > 0 && (<div className="src"><div className="src-lbl">🌐 แหล่งข้อมูลค้นเว็บสด</div>
-                <ol>{sources.map((s, i) => <li key={i}><a href={s.url} target="_blank" rel="noreferrer">{s.title}</a></li>)}</ol></div>)}
-            </>)}
-
-            {view === "onepager" && (<div className="pane">
-              {opLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังสรุปเป็นบทสรุป 1 หน้า…</div>}
-              {opErr && <div className="err">{opErr} <button className="mini-btn" onClick={makeOnepager}>ลองใหม่</button></div>}
-              {onepager && !opLoading && <Markdown text={onepager} />}</div>)}
-
-            {view === "prep" && (<div className="pane">
-              {prepLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังจัดทำแนวทางเตรียมความพร้อม…</div>}
-              {prepErr && <div className="err">{prepErr} <button className="mini-btn" onClick={makePrep}>ลองใหม่</button></div>}
-              {prep && !prepLoading && <Markdown text={prep} />}</div>)}
-
-            {view === "extra" && (<div className="pane">
-              <div className="extra-buttons">{Object.entries(EXTRAS).map(([k, v]) => (
-                <button key={k} className={"ex-btn" + (extraKey === k ? " on" : "")} disabled={extraLoading} onClick={() => runExtra(k)}>{v.label}</button>))}</div>
-              {extraLoading && <div className="sk-pulse" style={{ padding: "16px 0" }}>กำลังสร้าง {EXTRAS[extraKey]?.label}…</div>}
-              {extraErr && <div className="err">{extraErr} <button className="mini-btn" onClick={() => runExtra(extraKey)}>ลองใหม่</button></div>}
-              {extra && !extraLoading && <Markdown text={extra} />}
-              {!extra && !extraLoading && !extraErr && <p className="extra-hint">เลือกรูปแบบผลลัพธ์ที่ต้องการด้านบน กุนซือจะแปลงจากผลวิเคราะห์ให้</p>}
-            </div>)}
-
-            {view === "tools" && (<div className="pane">
-              <p className="tools-intro">เครื่องมือ {usedFw.length} ตัวที่กุนซือเลือกใช้กับโจทย์นี้ พร้อมเหตุผลและแหล่งอ้างอิงระเบียบวิธีต้นฉบับ</p>
-              {usedFw.map((f) => (<div key={f} className="tool-row"><div className="tool-name">{f}</div><div className="tool-why">{fwMeta(f).why}</div><div className="tool-ref">อ้างอิง: {fwMeta(f).ref}</div></div>))}</div>)}
-
-            {view === "mindmap" && (<div className="pane">
-              {mmLoading && <div className="sk-pulse" style={{ padding: "20px 0" }}>กำลังสรุปเป็นมายด์แมพ…</div>}
-              {mmError && <div className="err">{mmError} <button className="mini-btn" onClick={makeMindmap}>ลองใหม่</button></div>}
-              {mindmap && !mmLoading && (<><MindMap data={mindmap} /><button className="mini-btn" onClick={makeMindmap} style={{ marginTop: 14 }}>↻ สร้างมายด์แมพใหม่</button></>)}</div>)}
-          </>)}
-       </main>
       </div>
-
-      <footer className="foot">
-        <div>{NAME} · {NAME_EN} v{VERSION}</div>
-        <div>พัฒนาโดย {DEV.name} · {DEV.role} · {DEV.unit} {DEV.org}</div>
-      </footer>
     </div>
   );
 }
@@ -996,4 +1226,135 @@ button.fw{cursor:pointer;}
 .mini-btn:hover{background:var(--chipOn);}
 .mini-btn.primary{color:#fff;background:var(--gradbtn);border:none;box-shadow:0 5px 14px rgba(109,95,239,.35);}
 .foot{max-width:1120px;margin:28px auto 0;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim);text-align:center;letter-spacing:.03em;line-height:1.8;}
+
+/* ===== โหมด & สเต็ปเปอร์ ===== */
+.modebar{max-width:1260px;margin:0 auto 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:560px){.modebar{grid-template-columns:1fr;}}
+.modebtn{display:flex;align-items:center;gap:12px;text-align:left;font-family:inherit;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 18px;cursor:pointer;transition:all .15s;box-shadow:0 4px 14px rgba(30,70,110,.07);}
+.modebtn:hover{border-color:var(--brand1);transform:translateY(-1px);}
+.modebtn.on{border-color:transparent;background:var(--gradbtn);box-shadow:0 10px 24px rgba(28,109,181,.32);}
+.modebtn .mb-ic{font-size:22px;line-height:1;flex-shrink:0;}
+.modebtn .mb-txt{display:flex;flex-direction:column;gap:2px;}
+.modebtn .mb-txt b{font-size:14.5px;color:var(--text);font-weight:700;}
+.modebtn .mb-txt em{font-style:normal;font-size:11.5px;color:var(--muted);}
+.modebtn.on .mb-ic,.modebtn.on .mb-txt b,.modebtn.on .mb-txt em{color:#fff;}
+.modebtn.on .mb-txt em{color:rgba(255,255,255,.85);}
+.stepper{max-width:1260px;margin:0 auto 18px;display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow);overflow-x:auto;}
+.snode{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;font-family:inherit;cursor:pointer;padding:2px 2px;flex-shrink:0;min-width:58px;}
+.snode .sdot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--field);border:1px solid var(--line);color:var(--muted);transition:all .15s;}
+.snode .slabel{font-size:11px;color:var(--muted);white-space:nowrap;}
+.snode:hover .sdot{border-color:var(--brand1);color:var(--brand1);}
+.snode.cur .sdot{background:var(--gradbtn);color:#fff;border-color:transparent;box-shadow:0 5px 14px rgba(28,109,181,.4);}
+.snode.cur .slabel{color:var(--brand1);font-weight:700;}
+.snode.done .sdot{background:var(--fwOn);border-color:var(--brand2);color:var(--brand2);}
+.snode.done .slabel{color:var(--brand2);}
+.sline{flex:1;min-width:14px;height:2px;background:var(--line);border-radius:2px;}
+.sline.done{background:var(--brand2);}
+/* ===== guide intro ===== */
+.guide-intro{padding:4px 2px;}
+.gi-title{font-size:20px;font-weight:700;color:var(--text);margin:0 0 8px;}
+.gi-sub{font-size:14px;color:var(--muted);line-height:1.7;margin:0 0 18px;max-width:640px;}
+.gi-steps{list-style:none;margin:0 0 22px;padding:0;display:flex;flex-direction:column;gap:10px;counter-reset:gi;}
+.gi-steps li{display:flex;align-items:flex-start;gap:12px;background:var(--field);border:1px solid var(--line);border-left:4px solid var(--brand1);border-radius:12px;padding:12px 14px;}
+.gi-ic{font-size:20px;line-height:1.1;flex-shrink:0;}
+.gi-txt{display:flex;flex-direction:column;gap:2px;}
+.gi-txt b{font-size:14px;color:var(--text);font-weight:700;}
+.gi-txt span{font-size:12.5px;color:var(--muted);}
+/* ===== stage area ===== */
+.stage-wrap{padding:2px;}
+.stage-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.stage-no{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;background:var(--gradbtn);flex-shrink:0;box-shadow:0 6px 16px rgba(28,109,181,.35);}
+.stage-title{font-size:18px;font-weight:700;color:var(--text);line-height:1.25;}
+.stage-desc{font-size:12.5px;color:var(--muted);margin-top:2px;}
+.stage-fw{margin-bottom:18px;}
+.stage-cta{text-align:center;padding:26px 10px;}
+.stage-cta .run{max-width:300px;margin:0 auto 10px;display:block;}
+.stage-refine{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;}
+.stage-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid var(--line);}
+.stage-count{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);}
+.nav-btn{font-family:inherit;font-size:13.5px;font-weight:600;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:11px 20px;cursor:pointer;transition:all .14s;}
+.nav-btn:hover:not(:disabled){border-color:var(--brand1);color:var(--brand1);}
+.nav-btn.primary{color:#fff;background:var(--gradbtn);border-color:transparent;box-shadow:0 6px 16px rgba(28,109,181,.32);}
+.nav-btn.primary:hover:not(:disabled){filter:brightness(1.05);}
+.nav-btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;}
+.gstage-list{margin-top:14px;display:flex;flex-direction:column;gap:6px;}
+.gstage-li{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--muted);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:8px 11px;cursor:pointer;transition:all .14s;}
+.gstage-li:hover{border-color:var(--brand1);}
+.gstage-li .gstage-ic{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;background:var(--panel2);flex-shrink:0;}
+.gstage-li.ok{color:var(--brand2);}
+.gstage-li.ok .gstage-ic{background:var(--fwOn);color:var(--brand2);}
+.gstage-li.now{border-color:var(--brand1);background:var(--chipOn);color:var(--brand1);font-weight:600;}
+
+/* ============================================================
+   ★ APP SHELL (dashboard) + neumorphic (โทน MoPH)
+   ============================================================ */
+.root{--nm:9px 9px 24px rgba(23,55,95,.11),-8px -8px 18px rgba(255,255,255,.85);
+  background:radial-gradient(900px 500px at 10% -10%,rgba(28,109,181,.08),transparent 60%),radial-gradient(760px 440px at 100% 0%,rgba(20,160,133,.08),transparent 55%),#E9EEF5;}
+.root.dark{--nm:10px 10px 28px rgba(0,0,0,.5),-6px -6px 16px rgba(70,100,120,.08);
+  background:radial-gradient(900px 500px at 10% -10%,rgba(63,160,224,.14),transparent 60%),radial-gradient(760px 440px at 100% 0%,rgba(44,197,160,.10),transparent 55%),#0C1922;}
+
+.shell{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:248px 1fr;gap:22px;align-items:start;}
+/* ---- navbar (ไซด์บาร์ไล่เฉด MoPH) ---- */
+.navbar{position:sticky;top:0;align-self:start;background:var(--banner);border-radius:24px;padding:22px 16px;display:flex;flex-direction:column;gap:6px;min-height:calc(100vh - 2*clamp(16px,4vw,40px));box-shadow:0 20px 48px rgba(18,80,96,.3);}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 6px 16px;border-bottom:1px solid rgba(255,255,255,.18);margin-bottom:10px;}
+.navbar .logo{width:44px;height:44px;border-radius:13px;font-size:23px;}
+.brand-name{font-size:19px;font-weight:700;color:#fff;line-height:1;}
+.brand-ver{font-size:10px;color:rgba(255,255,255,.78);margin-top:4px;letter-spacing:.02em;}
+.navlist{display:flex;flex-direction:column;gap:4px;}
+.navitem{display:flex;align-items:center;gap:11px;width:100%;text-align:left;font-family:inherit;font-size:13.5px;color:rgba(255,255,255,.82);background:none;border:none;border-radius:12px;padding:12px 13px;cursor:pointer;transition:all .14s;}
+.navitem:hover{background:rgba(255,255,255,.12);color:#fff;}
+.navitem.on{background:rgba(255,255,255,.2);color:#fff;font-weight:700;box-shadow:inset 3px 0 0 #fff;}
+.navic{font-size:16px;line-height:1;width:20px;text-align:center;flex-shrink:0;}
+.gauge-card{position:relative;width:96px;height:96px;margin:22px auto 6px;}
+.gauge-svg{display:block;}
+.gauge-track{fill:none;stroke:rgba(255,255,255,.22);stroke-width:8;}
+.gauge-fill{fill:none;stroke:#fff;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .5s ease;}
+.gauge-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.gauge-main{font-size:21px;font-weight:800;color:#fff;line-height:1;}
+.gauge-sub{font-size:9.5px;color:rgba(255,255,255,.82);margin-top:4px;}
+.nav-foot{margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.18);}
+.navtheme{width:100%;font-family:inherit;font-size:12px;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);border-radius:11px;padding:9px;cursor:pointer;transition:background .14s;}
+.navtheme:hover{background:rgba(255,255,255,.26);}
+.nav-dev{margin-top:12px;font-size:10px;color:rgba(255,255,255,.72);line-height:1.5;}
+.nav-dev b{color:#fff;display:block;font-size:11px;margin-bottom:2px;}
+.nav-dev span{display:block;}
+.nav-scrim{display:none;}
+/* ---- main column + topbar ---- */
+.main-col{min-width:0;display:flex;flex-direction:column;gap:18px;padding-bottom:10px;}
+.topbar{display:flex;align-items:center;gap:14px;background:var(--panel);border-radius:18px;padding:13px 20px;box-shadow:var(--nm);}
+.topbar-title{font-size:16px;font-weight:700;color:var(--text);flex:1;min-width:0;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.burger{display:none;background:var(--field);border:1px solid var(--line);border-radius:10px;font-size:16px;color:var(--text);padding:7px 11px;cursor:pointer;line-height:1;}
+.modeseg{display:flex;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;}
+.mseg{font-family:inherit;font-size:12.5px;font-weight:600;color:var(--muted);background:none;border:none;border-radius:9px;padding:8px 15px;cursor:pointer;transition:all .14s;white-space:nowrap;}
+.mseg:hover{color:var(--text);}
+.mseg.on{background:var(--gradbtn);color:#fff;box-shadow:0 4px 12px rgba(28,109,181,.32);}
+.content{display:flex;flex-direction:column;gap:18px;}
+.content-stepper .stepper{margin:0;max-width:none;}
+/* ---- neumorphic cards (soft UI) ---- */
+.panel{border:none;box-shadow:var(--nm);border-radius:22px;}
+.panel::before{display:none;}
+.report-area{border:none;box-shadow:var(--nm);border-radius:22px;overflow:visible;}
+.report-area::before{display:none;}
+.statcard,.conn,.fw-li,.tool-row,.gi-steps li,.file-chip,.how-step{box-shadow:0 4px 12px rgba(27,60,100,.06);}
+.statcard{border:none;}
+.stepper,.modebar .modebtn{box-shadow:var(--nm);}
+.about-card{padding:20px 24px;}
+.about-head{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.about-tag{font-size:11.5px;color:var(--muted);margin-top:3px;}
+.about-def{font-size:13.5px;color:var(--body);line-height:1.7;margin:0 0 12px;max-width:840px;}
+.about-dev{margin-top:12px;font-size:11.5px;color:var(--muted);border-left:3px solid var(--brand1);padding-left:10px;}
+.about-dev b{color:var(--text);}
+.app{max-width:none;margin:0;gap:18px;}
+/* ---- responsive: navbar slide-in ---- */
+@media(max-width:1040px){
+  .shell{grid-template-columns:1fr;}
+  .navbar{position:fixed;left:0;top:0;bottom:0;width:264px;min-height:100vh;border-radius:0 22px 22px 0;z-index:60;transform:translateX(-112%);transition:transform .25s ease;}
+  .shell.nav-open .navbar{transform:none;}
+  .nav-scrim{display:block;position:fixed;inset:0;background:rgba(10,25,40,.45);z-index:55;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .shell.nav-open .nav-scrim{opacity:1;pointer-events:auto;}
+  .burger{display:inline-flex;align-items:center;justify-content:center;}
+}
+@media(max-width:980px){.app{grid-template-columns:1fr;}}
+@media(max-width:560px){.mseg{padding:8px 11px;}.topbar{padding:11px 14px;}}
 `;
